@@ -35,6 +35,15 @@ log = "0.4"
 # No-std compatible utilities
 heapless = "0.8"
 
+# Math (for libm functions in no_std)
+libm = "0.2"
+
+[features]
+default = []
+agriculture = []
+solar = []
+all-industries = ["agriculture", "solar"]
+
 [profile.dev]
 opt-level = "s"
 debug = true

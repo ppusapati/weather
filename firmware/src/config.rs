@@ -164,6 +164,136 @@ pub const STUCK_SENSOR_EPSILON: f32 = 0.001;
 /// Full circle in degrees for wind direction normalization.
 pub const WIND_DIR_FULL_CIRCLE: f32 = 360.0;
 
+// ========== AGRICULTURE INDUSTRY ==========
+
+/// Soil moisture sensor ADC pin (capacitive sensor).
+#[cfg(feature = "agriculture")]
+pub const SOIL_MOISTURE_ADC_PIN: u8 = 7;
+/// Soil temperature sensor pin (DS18B20 1-Wire).
+#[cfg(feature = "agriculture")]
+pub const SOIL_TEMP_PIN: u8 = 16;
+/// Leaf wetness sensor ADC pin.
+#[cfg(feature = "agriculture")]
+pub const LEAF_WETNESS_ADC_PIN: u8 = 17;
+/// Second soil moisture probe (deeper layer) ADC pin.
+#[cfg(feature = "agriculture")]
+pub const SOIL_MOISTURE_DEEP_ADC_PIN: u8 = 18;
+
+/// Soil moisture range: completely dry (ADC reading).
+#[cfg(feature = "agriculture")]
+pub const SOIL_MOISTURE_DRY_ADC: u16 = 3500;
+/// Soil moisture range: saturated (ADC reading).
+#[cfg(feature = "agriculture")]
+pub const SOIL_MOISTURE_WET_ADC: u16 = 1200;
+/// Soil moisture reading interval.
+#[cfg(feature = "agriculture")]
+pub const SOIL_READ_INTERVAL_MS: u64 = 60_000;
+/// Leaf wetness threshold (ADC) — above this means "wet".
+#[cfg(feature = "agriculture")]
+pub const LEAF_WETNESS_THRESHOLD: u16 = 2000;
+
+/// Growing Degree Day base temperatures for common crops (°C).
+#[cfg(feature = "agriculture")]
+pub const GDD_BASE_TEMP_CORN: f32 = 10.0;
+#[cfg(feature = "agriculture")]
+pub const GDD_BASE_TEMP_WHEAT: f32 = 0.0;
+#[cfg(feature = "agriculture")]
+pub const GDD_BASE_TEMP_RICE: f32 = 10.0;
+#[cfg(feature = "agriculture")]
+pub const GDD_BASE_TEMP_SOYBEAN: f32 = 10.0;
+#[cfg(feature = "agriculture")]
+pub const GDD_BASE_TEMP_COTTON: f32 = 15.6;
+
+/// Frost alert threshold (°C).
+#[cfg(feature = "agriculture")]
+pub const FROST_ALERT_THRESHOLD_C: f32 = 2.0;
+/// Frost critical threshold (°C).
+#[cfg(feature = "agriculture")]
+pub const FROST_CRITICAL_THRESHOLD_C: f32 = 0.0;
+
+/// Evapotranspiration psychrometric constant (kPa/°C).
+#[cfg(feature = "agriculture")]
+pub const ET_PSYCHROMETRIC_CONST: f32 = 0.0665;
+/// Soil field capacity (volumetric %) — triggers irrigation stop.
+#[cfg(feature = "agriculture")]
+pub const SOIL_FIELD_CAPACITY_PCT: f32 = 35.0;
+/// Soil wilting point (volumetric %) — triggers irrigation start.
+#[cfg(feature = "agriculture")]
+pub const SOIL_WILTING_POINT_PCT: f32 = 15.0;
+
+/// EMA filter alpha for soil sensors.
+#[cfg(feature = "agriculture")]
+pub const EMA_ALPHA_SOIL_MOISTURE: f32 = 0.2;
+#[cfg(feature = "agriculture")]
+pub const EMA_ALPHA_SOIL_TEMP: f32 = 0.2;
+
+// ========== SOLAR ENERGY INDUSTRY ==========
+
+/// Pyranometer (ML8511) ADC pin — measures solar irradiance.
+#[cfg(feature = "solar")]
+pub const PYRANOMETER_ADC_PIN: u8 = 7;
+/// Panel temperature sensor pin (DS18B20 1-Wire).
+#[cfg(feature = "solar")]
+pub const PANEL_TEMP_PIN: u8 = 16;
+/// Second panel temperature sensor (back of panel).
+#[cfg(feature = "solar")]
+pub const PANEL_TEMP_BACK_PIN: u8 = 19;
+/// AC power meter pulse input (grid-tie inverter output).
+#[cfg(feature = "solar")]
+pub const POWER_METER_PULSE_PIN: u8 = 20;
+
+/// Solar irradiance read interval.
+#[cfg(feature = "solar")]
+pub const SOLAR_READ_INTERVAL_MS: u64 = 10_000;
+
+/// ML8511 calibration: mV per (mW/cm²).
+#[cfg(feature = "solar")]
+pub const PYRANOMETER_MV_PER_UNIT: f32 = 12.67;
+/// ML8511 baseline voltage (mV) at 0 mW/cm².
+#[cfg(feature = "solar")]
+pub const PYRANOMETER_BASELINE_MV: f32 = 1000.0;
+/// Conversion: mW/cm² → W/m².
+#[cfg(feature = "solar")]
+pub const MW_CM2_TO_W_M2: f32 = 10.0;
+
+/// Panel nominal power (watts-peak) — for yield calculation.
+#[cfg(feature = "solar")]
+pub const PANEL_NOMINAL_WP: f32 = 400.0;
+/// Panel area in m².
+#[cfg(feature = "solar")]
+pub const PANEL_AREA_M2: f32 = 1.94;
+/// Panel temperature coefficient (%/°C above 25°C STC).
+#[cfg(feature = "solar")]
+pub const PANEL_TEMP_COEFF_PCT_PER_C: f32 = -0.35;
+/// Standard Test Conditions temperature.
+#[cfg(feature = "solar")]
+pub const STC_TEMP_C: f32 = 25.0;
+/// Standard Test Conditions irradiance (W/m²).
+#[cfg(feature = "solar")]
+pub const STC_IRRADIANCE_W_M2: f32 = 1000.0;
+/// Minimum irradiance to count as peak sun hour (W/m²).
+#[cfg(feature = "solar")]
+pub const PEAK_SUN_HOUR_THRESHOLD_W_M2: f32 = 1000.0;
+/// Irradiance threshold for cloud detection (W/m²).
+#[cfg(feature = "solar")]
+pub const CLOUD_COVER_THRESHOLD_W_M2: f32 = 200.0;
+/// Soiling loss per day without rain (%).
+#[cfg(feature = "solar")]
+pub const SOILING_LOSS_PCT_PER_DAY: f32 = 0.1;
+/// Maximum soiling accumulation days.
+#[cfg(feature = "solar")]
+pub const SOILING_MAX_DAYS: u16 = 30;
+
+/// Irradiance validation max (W/m²).
+#[cfg(feature = "solar")]
+pub const IRRADIANCE_MAX_W_M2: f32 = 1500.0;
+/// EMA alpha for irradiance.
+#[cfg(feature = "solar")]
+pub const EMA_ALPHA_IRRADIANCE: f32 = 0.5;
+/// EMA alpha for panel temperature.
+#[cfg(feature = "solar")]
+pub const EMA_ALPHA_PANEL_TEMP: f32 = 0.3;
+
 // ---------- Firmware Info ----------
 
 pub const FIRMWARE_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -205,6 +335,24 @@ pub struct RuntimeConfig {
     pub cal_humidity_offset: f32,
     pub cal_pressure_offset: f32,
     pub cal_wind_dir_offset: f32,
+
+    // Agriculture industry config
+    #[cfg(feature = "agriculture")]
+    pub gdd_base_temp_c: f32,
+    #[cfg(feature = "agriculture")]
+    pub irrigation_enable: bool,
+    #[cfg(feature = "agriculture")]
+    pub crop_type: heapless::String<16>,
+
+    // Solar industry config
+    #[cfg(feature = "solar")]
+    pub panel_wp: f32,
+    #[cfg(feature = "solar")]
+    pub panel_area_m2: f32,
+    #[cfg(feature = "solar")]
+    pub panel_tilt_deg: f32,
+    #[cfg(feature = "solar")]
+    pub panel_azimuth_deg: f32,
 }
 
 impl Default for RuntimeConfig {
@@ -232,6 +380,20 @@ impl Default for RuntimeConfig {
             cal_humidity_offset: 0.0,
             cal_pressure_offset: 0.0,
             cal_wind_dir_offset: 0.0,
+            #[cfg(feature = "agriculture")]
+            gdd_base_temp_c: GDD_BASE_TEMP_CORN,
+            #[cfg(feature = "agriculture")]
+            irrigation_enable: false,
+            #[cfg(feature = "agriculture")]
+            crop_type: heapless::String::new(),
+            #[cfg(feature = "solar")]
+            panel_wp: PANEL_NOMINAL_WP,
+            #[cfg(feature = "solar")]
+            panel_area_m2: PANEL_AREA_M2,
+            #[cfg(feature = "solar")]
+            panel_tilt_deg: 30.0,
+            #[cfg(feature = "solar")]
+            panel_azimuth_deg: 180.0,
         }
     }
 }

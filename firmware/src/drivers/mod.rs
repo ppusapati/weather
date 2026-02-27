@@ -11,6 +11,18 @@ pub mod rain;
 pub mod uv;
 pub mod wind;
 
+// Agriculture sensors
+#[cfg(feature = "agriculture")]
+pub mod leaf_wetness;
+#[cfg(feature = "agriculture")]
+pub mod soil_moisture;
+#[cfg(feature = "agriculture")]
+pub mod soil_temp;
+
+// Solar sensors
+#[cfg(feature = "solar")]
+pub mod pyranometer;
+
 use serde::{Deserialize, Serialize};
 
 /// Status of an individual sensor.
@@ -45,6 +57,16 @@ pub struct SensorStatusMap {
     pub rain: SensorStatus,
     pub uv: SensorStatus,
     pub light: SensorStatus,
+    #[cfg(feature = "agriculture")]
+    pub soil_moisture: SensorStatus,
+    #[cfg(feature = "agriculture")]
+    pub soil_temp: SensorStatus,
+    #[cfg(feature = "agriculture")]
+    pub leaf_wetness: SensorStatus,
+    #[cfg(feature = "solar")]
+    pub pyranometer: SensorStatus,
+    #[cfg(feature = "solar")]
+    pub panel_temp: SensorStatus,
 }
 
 impl Default for SensorStatusMap {
@@ -55,6 +77,16 @@ impl Default for SensorStatusMap {
             rain: SensorStatus::NotFound,
             uv: SensorStatus::NotFound,
             light: SensorStatus::NotFound,
+            #[cfg(feature = "agriculture")]
+            soil_moisture: SensorStatus::NotFound,
+            #[cfg(feature = "agriculture")]
+            soil_temp: SensorStatus::NotFound,
+            #[cfg(feature = "agriculture")]
+            leaf_wetness: SensorStatus::NotFound,
+            #[cfg(feature = "solar")]
+            pyranometer: SensorStatus::NotFound,
+            #[cfg(feature = "solar")]
+            panel_temp: SensorStatus::NotFound,
         }
     }
 }

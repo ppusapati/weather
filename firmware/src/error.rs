@@ -46,6 +46,9 @@ pub enum Error {
     WatchdogTimeout,
     InvalidConfig,
     CrcMismatch,
+
+    // Sensor lifecycle
+    SensorNotReady,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,6 +60,12 @@ pub enum SensorKind {
     UvIndex,
     AmbientLight,
     Battery,
+    Temperature,
+    SoilMoisture,
+    SoilTemperature,
+    LeafWetness,
+    Pyranometer,
+    PanelTemperature,
 }
 
 impl fmt::Display for Error {
@@ -93,6 +102,7 @@ impl fmt::Display for Error {
             Error::WatchdogTimeout => write!(f, "watchdog timeout"),
             Error::InvalidConfig => write!(f, "invalid configuration"),
             Error::CrcMismatch => write!(f, "CRC mismatch"),
+            Error::SensorNotReady => write!(f, "sensor not ready"),
         }
     }
 }
@@ -107,6 +117,12 @@ impl fmt::Display for SensorKind {
             SensorKind::UvIndex => write!(f, "UV Index"),
             SensorKind::AmbientLight => write!(f, "Ambient Light"),
             SensorKind::Battery => write!(f, "Battery"),
+            SensorKind::Temperature => write!(f, "Temperature"),
+            SensorKind::SoilMoisture => write!(f, "Soil Moisture"),
+            SensorKind::SoilTemperature => write!(f, "Soil Temperature"),
+            SensorKind::LeafWetness => write!(f, "Leaf Wetness"),
+            SensorKind::Pyranometer => write!(f, "Pyranometer"),
+            SensorKind::PanelTemperature => write!(f, "Panel Temperature"),
         }
     }
 }
