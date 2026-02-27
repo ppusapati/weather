@@ -1,4 +1,9 @@
 /// Firmware configuration constants and runtime config.
+///
+/// All hardware pin assignments, I2C addresses, timing intervals,
+/// calibration constants, and validation ranges are defined here
+/// as named constants. Runtime-configurable values are stored in
+/// [`RuntimeConfig`] and persisted in NVS flash.
 
 use serde::{Deserialize, Serialize};
 
@@ -128,6 +133,37 @@ pub const FLASH_RECORD_SIZE: usize = 64;
 
 pub const READING_BUFFER_CAPACITY: usize = 64;
 
+// ---------- Heap ----------
+
+/// Heap allocator size in bytes (384 KB).
+pub const HEAP_SIZE: usize = 384 * 1024;
+
+// ---------- Main Loop ----------
+
+/// Main loop tick interval in milliseconds.
+pub const MAIN_LOOP_TICK_MS: u64 = 10;
+
+// ---------- Power Thresholds (milliseconds) ----------
+
+/// Idle threshold before entering modem sleep.
+pub const IDLE_MODEM_SLEEP_MS: u64 = 5_000;
+/// Idle threshold before entering light sleep.
+pub const IDLE_LIGHT_SLEEP_MS: u64 = 30_000;
+/// Initial WiFi reconnection backoff in milliseconds.
+pub const WIFI_BACKOFF_INITIAL_MS: u64 = 2_000;
+/// Maximum WiFi reconnection backoff in milliseconds.
+pub const WIFI_BACKOFF_MAX_MS: u64 = 30_000;
+
+// ---------- Stuck Sensor ----------
+
+/// Epsilon for floating-point comparison in stuck sensor detection.
+pub const STUCK_SENSOR_EPSILON: f32 = 0.001;
+
+// ---------- Wind Direction ----------
+
+/// Full circle in degrees for wind direction normalization.
+pub const WIND_DIR_FULL_CIRCLE: f32 = 360.0;
+
 // ---------- Firmware Info ----------
 
 pub const FIRMWARE_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -174,7 +210,8 @@ pub struct RuntimeConfig {
 impl Default for RuntimeConfig {
     fn default() -> Self {
         Self {
-            device_name: heapless::String::try_from(DEVICE_NAME_DEFAULT).unwrap(),
+            // SAFETY: DEVICE_NAME_DEFAULT ("WeatherStation") is 14 chars, fits in String<32>.
+            device_name: heapless::String::try_from(DEVICE_NAME_DEFAULT).unwrap_or_default(),
             device_id: 1,
             wifi_ssid: heapless::String::new(),
             wifi_password: heapless::String::new(),

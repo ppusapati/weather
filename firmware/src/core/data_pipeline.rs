@@ -99,7 +99,7 @@ impl StuckDetector {
     /// Returns true if the sensor appears stuck.
     fn check(&mut self, value: f32) -> bool {
         match self.last_value {
-            Some(prev) if (value - prev).abs() < 0.001 => {
+            Some(prev) if (value - prev).abs() < config::STUCK_SENSOR_EPSILON => {
                 self.same_count += 1;
             }
             _ => {

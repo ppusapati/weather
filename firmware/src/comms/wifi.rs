@@ -5,6 +5,7 @@
 
 use crate::config;
 use crate::error::{Error, Result};
+use crate::utils::fmt::HeaplessWriter;
 use heapless::String;
 
 /// WiFi connection state.
@@ -48,13 +49,19 @@ pub struct WifiManager {
     ntp_synced: bool,
 }
 
+impl Default for WifiManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WifiManager {
     pub fn new() -> Self {
         Self {
             state: WifiState::Disconnected,
             retry_count: 0,
             max_retries: config::WIFI_RETRY_MAX,
-            backoff_ms: 2000,
+            backoff_ms: config::WIFI_BACKOFF_INITIAL_MS,
             ssid: String::new(),
             password: String::new(),
             info: None,
@@ -88,9 +95,6 @@ impl WifiManager {
 
     /// Attempt to connect to the configured AP.
     fn connect(&mut self) -> Result<()> {
-        // In real firmware, this would call esp_wifi::wifi::WiFi::connect()
-        // For now, we model the state machine.
-
         log::info!(
             "WiFi: connecting to '{}' (attempt {}/{})",
             self.ssid.as_str(),
@@ -98,7 +102,7 @@ impl WifiManager {
             self.max_retries
         );
 
-        // Placeholder: the actual connection is async and event-driven.
+        // In real firmware: esp_wifi::wifi::WiFi::connect()
         // The event handler calls handle_event() when the result is known.
         Ok(())
     }
@@ -109,19 +113,16 @@ impl WifiManager {
             WifiEvent::Connected { ip } => {
                 self.state = WifiState::Connected;
                 self.retry_count = 0;
-                self.backoff_ms = 2000;
+                self.backoff_ms = config::WIFI_BACKOFF_INITIAL_MS;
                 self.info = Some(WifiInfo {
                     ip_address: ip,
-                    rssi_dbm: 0, // updated separately
+                    rssi_dbm: 0,
                     channel: 0,
                     ssid: self.ssid.clone(),
                 });
                 log::info!(
                     "WiFi: connected, IP={}.{}.{}.{}",
-                    ip[0],
-                    ip[1],
-                    ip[2],
-                    ip[3]
+                    ip[0], ip[1], ip[2], ip[3]
                 );
             }
             WifiEvent::Disconnected => {
@@ -145,11 +146,12 @@ impl WifiManager {
     }
 
     fn attempt_reconnect(&mut self) {
-        let delay = self.backoff_ms.min(30_000);
+        let delay = self.backoff_ms.min(config::WIFI_BACKOFF_MAX_MS);
         log::info!("WiFi: reconnecting in {}ms", delay);
-        self.backoff_ms = (self.backoff_ms * 2).min(30_000);
-        // In real firmware: schedule reconnect after delay
-        let _ = self.connect();
+        self.backoff_ms = (self.backoff_ms * 2).min(config::WIFI_BACKOFF_MAX_MS);
+        if let Err(e) = self.connect() {
+            log::error!("WiFi: reconnect failed: {}", e);
+        }
     }
 
     /// Synchronize time via NTP (call after WiFi connected).
@@ -159,7 +161,6 @@ impl WifiManager {
         }
 
         log::info!("WiFi: NTP sync requested");
-        // In real firmware: call SNTP client
         self.ntp_synced = true;
         Ok(())
     }
@@ -194,7 +195,7 @@ impl WifiManager {
         self.info.as_ref().map(|i| {
             let mut s = String::new();
             let _ = core::fmt::write(
-                &mut StringWriter(&mut s),
+                &mut HeaplessWriter(&mut s),
                 format_args!(
                     "{}.{}.{}.{}",
                     i.ip_address[0], i.ip_address[1], i.ip_address[2], i.ip_address[3]
@@ -202,14 +203,5 @@ impl WifiManager {
             );
             s
         })
-    }
-}
-
-/// Helper to write formatted strings into heapless::String.
-struct StringWriter<'a, const N: usize>(&'a mut String<N>);
-
-impl<const N: usize> core::fmt::Write for StringWriter<'_, N> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.0.push_str(s).map_err(|_| core::fmt::Error)
     }
 }

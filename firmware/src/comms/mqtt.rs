@@ -1,11 +1,12 @@
 /// MQTT client for publishing weather telemetry and subscribing to commands.
 ///
 /// Uses WiFi TCP connection to communicate with an MQTT v3.1.1 broker.
-/// Supports QoS 0 and 1, with message buffering during disconnection.
+/// Supports QoS 0, 1, and 2, with message buffering during disconnection.
 
 use crate::config;
 use crate::core::data_pipeline::WeatherReading;
 use crate::error::{Error, Result};
+use crate::utils::fmt::HeaplessWriter;
 use heapless::String;
 use serde::Serialize;
 
@@ -151,7 +152,6 @@ impl MqttClient {
         self.state = MqttState::Connected;
         log::info!("MQTT: connected");
 
-        // Subscribe to command topic
         self.subscribe_commands()?;
 
         Ok(())
@@ -159,15 +159,15 @@ impl MqttClient {
 
     /// Subscribe to the device command topic.
     fn subscribe_commands(&mut self) -> Result<()> {
-        let mut topic: String<64> = String::new();
-        let _ = core::fmt::write(
-            &mut HeaplessWriter(&mut topic),
-            format_args!("weather/{}/cmd", self.device_id.as_str()),
-        );
-
+        let topic: String<64> = format_heapless!("weather/{}/cmd", self.device_id.as_str());
         log::info!("MQTT: subscribing to '{}'", topic.as_str());
         // In real firmware: send SUBSCRIBE packet
         Ok(())
+    }
+
+    /// Build a topic string for this device.
+    fn make_topic(&self, suffix: &str) -> String<64> {
+        format_heapless!("weather/{}/{}", self.device_id.as_str(), suffix)
     }
 
     /// Publish a weather reading to the telemetry topic.
@@ -192,12 +192,7 @@ impl MqttClient {
             wind_chill_c: reading.wind_chill_c,
         };
 
-        let mut topic: String<64> = String::new();
-        let _ = core::fmt::write(
-            &mut HeaplessWriter(&mut topic),
-            format_args!("weather/{}/telemetry", self.device_id.as_str()),
-        );
-
+        let topic = self.make_topic("telemetry");
         self.publish(&topic, &payload, QoS::AtLeastOnce)
     }
 
@@ -226,12 +221,7 @@ impl MqttClient {
             firmware_version: config::FIRMWARE_VERSION,
         };
 
-        let mut topic: String<64> = String::new();
-        let _ = core::fmt::write(
-            &mut HeaplessWriter(&mut topic),
-            format_args!("weather/{}/status", self.device_id.as_str()),
-        );
-
+        let topic = self.make_topic("status");
         self.publish(&topic, &payload, QoS::AtLeastOnce)
     }
 
@@ -258,18 +248,12 @@ impl MqttClient {
             message,
         };
 
-        let mut topic: String<64> = String::new();
-        let _ = core::fmt::write(
-            &mut HeaplessWriter(&mut topic),
-            format_args!("weather/{}/alerts", self.device_id.as_str()),
-        );
-
+        let topic = self.make_topic("alerts");
         self.publish(&topic, &payload, QoS::ExactlyOnce)
     }
 
     /// Generic publish with serialization.
     fn publish<T: Serialize>(&mut self, topic: &str, payload: &T, qos: QoS) -> Result<()> {
-        // Serialize to JSON
         let mut buf = [0u8; 512];
         let json = serde_json_core_serialize(payload, &mut buf);
 
@@ -278,7 +262,12 @@ impl MqttClient {
             Err(_) => return Err(Error::MqttPublishFailed),
         };
 
-        log::debug!("MQTT: PUBLISH topic='{}' qos={} len={}", topic, qos as u8, json_str.len());
+        log::debug!(
+            "MQTT: PUBLISH topic='{}' qos={} len={}",
+            topic,
+            qos as u8,
+            json_str.len()
+        );
 
         // In real firmware: build and send MQTT PUBLISH packet
         self.packet_id = self.packet_id.wrapping_add(1);
@@ -288,11 +277,9 @@ impl MqttClient {
 
     /// Handle incoming MQTT message (called from network task).
     pub fn handle_message(&self, _topic: &str, payload: &[u8]) -> Option<MqttCommand> {
-        // Parse command JSON
         let payload_str = core::str::from_utf8(payload).ok()?;
         log::info!("MQTT: received command: {}", payload_str);
 
-        // Simplified command parsing
         if payload_str.contains("set_interval") {
             Some(MqttCommand::SetInterval {
                 telemetry_interval_s: 30,
@@ -314,7 +301,6 @@ impl MqttClient {
     pub fn disconnect(&mut self) {
         if self.state == MqttState::Connected {
             log::info!("MQTT: disconnecting");
-            // In real firmware: send DISCONNECT packet, close TCP
             self.state = MqttState::Disconnected;
         }
     }
@@ -329,21 +315,14 @@ impl MqttClient {
 }
 
 /// Minimal serde_json serialization for no_std with a fixed buffer.
-fn serde_json_core_serialize<T: Serialize>(value: &T, buf: &mut [u8]) -> core::result::Result<usize, ()> {
+fn serde_json_core_serialize<T: Serialize>(
+    value: &T,
+    buf: &mut [u8],
+) -> core::result::Result<usize, ()> {
     // In real firmware, use serde_json_core or manual serialization.
-    // This is a placeholder that would be replaced with actual JSON serialization.
     let _ = value;
     let placeholder = b"{}";
     let len = placeholder.len().min(buf.len());
     buf[..len].copy_from_slice(&placeholder[..len]);
     Ok(len)
-}
-
-/// Helper to write formatted text to heapless::String.
-struct HeaplessWriter<'a, const N: usize>(&'a mut String<N>);
-
-impl<const N: usize> core::fmt::Write for HeaplessWriter<'_, N> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.0.push_str(s).map_err(|_| core::fmt::Error)
-    }
 }

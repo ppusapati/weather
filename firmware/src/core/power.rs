@@ -131,13 +131,17 @@ impl PowerManager {
             .unwrap_or(0);
 
         // Decision tree for sleep mode
-        if self.battery.is_low && idle_duration > 5000 {
+        if self.battery.is_low && idle_duration > config::IDLE_MODEM_SLEEP_MS {
             // Low battery: prefer light sleep
             self.transition_to(PowerMode::LightSleep);
-        } else if time_until_next_task_ms > 30_000 && idle_duration > 30_000 {
+        } else if time_until_next_task_ms > config::IDLE_LIGHT_SLEEP_MS
+            && idle_duration > config::IDLE_LIGHT_SLEEP_MS
+        {
             // Long idle with no imminent tasks: light sleep
             self.transition_to(PowerMode::LightSleep);
-        } else if time_until_next_task_ms > 5000 && idle_duration > 5000 {
+        } else if time_until_next_task_ms > config::IDLE_MODEM_SLEEP_MS
+            && idle_duration > config::IDLE_MODEM_SLEEP_MS
+        {
             // Moderate idle: modem sleep
             self.transition_to(PowerMode::ModemSleep);
         }

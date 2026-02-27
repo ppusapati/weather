@@ -135,10 +135,10 @@ weather/{device_id}/ota            — OTA control channel
 
 | Mode | Current Draw | Duration | Trigger |
 |------|-------------|----------|---------|
-| **Active** | ~160 mA | During sampling + TX | Scheduler wake |
+| **Active** | ~170 mA | During sampling + TX | Scheduler wake |
 | **Modem sleep** | ~20 mA | Between WiFi TX | Auto after TX |
 | **Light sleep** | ~0.8 mA | Idle periods | Configurable |
-| **Deep sleep** | ~10 µA | Extended idle | Battery < 20% |
+| **Deep sleep** | ~12 µA | Extended idle | Battery < 20% |
 
 ### 5.2 Battery Monitoring
 

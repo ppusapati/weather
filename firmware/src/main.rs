@@ -17,12 +17,15 @@
 //! - `comms` — Communication channels (WiFi, BLE, LoRa, UART, MQTT, HTTP)
 //! - `core` — Scheduler, data pipeline, power management, OTA
 //! - `storage` — Flash circular buffer, NVS access
-//! - `utils` — Ring buffer, CRC
+//! - `utils` — Ring buffer, CRC, formatting helpers
 
 #![no_std]
 #![no_main]
 
 extern crate alloc;
+
+#[macro_use]
+mod utils;
 
 use core::sync::atomic::{AtomicBool, Ordering};
 
@@ -32,12 +35,11 @@ mod core;
 mod drivers;
 mod error;
 mod storage;
-mod utils;
 
 use crate::comms::ble::BleServer;
 use crate::comms::http::HttpServer;
 use crate::comms::mqtt::MqttClient;
-use crate::comms::uart_console::{ConsoleCommand, UartConsole};
+use crate::comms::uart_console::UartConsole;
 use crate::comms::wifi::WifiManager;
 use crate::config::RuntimeConfig;
 use crate::core::data_pipeline::{DataPipeline, RawSensorData, WeatherReading};
@@ -48,7 +50,7 @@ use crate::drivers::SensorStatusMap;
 use crate::storage::flash::FlashStorage;
 use crate::utils::ring_buffer::RingBuffer;
 
-/// Global flag: set by watchdog or panic handler.
+/// Global flag: set by watchdog or panic handler to signal error recovery.
 static SYSTEM_ERROR: AtomicBool = AtomicBool::new(false);
 
 /// Heap allocator for `alloc` support.
@@ -60,10 +62,11 @@ static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 fn main() -> ! {
     // ── Phase 1: Hardware Initialization ──────────────────────────
 
-    // Initialize heap allocator
-    const HEAP_SIZE: usize = 384 * 1024;
-    static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
-    unsafe { ALLOCATOR.init(HEAP.as_mut_ptr(), HEAP_SIZE) };
+    // SAFETY: Called exactly once, before any heap allocations, on the
+    // single-threaded boot path. The HEAP static is only accessed here
+    // and its lifetime is 'static, satisfying the allocator contract.
+    static mut HEAP: [u8; config::HEAP_SIZE] = [0; config::HEAP_SIZE];
+    unsafe { ALLOCATOR.init(HEAP.as_mut_ptr(), config::HEAP_SIZE) };
 
     // Initialize logging
     esp_println::logger::init_logger_from_env();
@@ -78,13 +81,10 @@ fn main() -> ! {
 
     // ── Phase 2: Peripheral Initialization ────────────────────────
 
-    // Initialize HAL peripherals
     // In real firmware: let peripherals = esp_hal::init(esp_hal::Config::default());
     // let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
     // let i2c = I2c::new(peripherals.I2C0, io.pins.gpio8, io.pins.gpio9, 400.kHz());
     // let spi = Spi::new(peripherals.SPI2, ...);
-    // etc.
-
     log::info!("HAL peripherals initialized");
 
     // ── Phase 3: Sensor Initialization ────────────────────────────
@@ -99,16 +99,21 @@ fn main() -> ! {
         runtime_config.wifi_ssid.as_str(),
         runtime_config.wifi_password.as_str(),
     );
-    let _ = wifi.init();
+    if let Err(e) = wifi.init() {
+        log::warn!("WiFi init failed: {} — will retry later", e);
+    }
 
     let mut ble = BleServer::new(runtime_config.device_name.as_str());
-    let _ = ble.init();
+    if let Err(e) = ble.init() {
+        log::warn!("BLE init failed: {}", e);
+    }
 
     // LoRa initialized via SPI (would need real SPI handle)
     // let mut lora = LoraRadio::new(spi, rst_pin, runtime_config.device_id);
-    // let _ = lora.init();
 
-    let mut mqtt = MqttClient::new(&format_device_id(runtime_config.device_id));
+    let device_id_str: heapless::String<16> =
+        format_heapless!("ws-{:04X}", runtime_config.device_id);
+    let mut mqtt = MqttClient::new(device_id_str.as_str());
     mqtt.configure(
         runtime_config.mqtt_broker.as_str(),
         runtime_config.mqtt_port,
@@ -122,7 +127,9 @@ fn main() -> ! {
     uart_console.init();
 
     let mut ota = OtaManager::new();
-    let _ = ota.validate_boot();
+    if let Err(e) = ota.validate_boot() {
+        log::warn!("OTA boot validation failed: {} — may rollback", e);
+    }
 
     log::info!("Communication channels initialized");
 
@@ -139,144 +146,121 @@ fn main() -> ! {
 
     let mut power = PowerManager::new();
     let mut flash_storage = FlashStorage::new();
-    let _ = flash_storage.init();
+    if let Err(e) = flash_storage.init() {
+        log::error!("Flash storage init failed: {} — data will not persist", e);
+    }
 
-    // Reading buffer for inter-task communication
     let mut reading_buffer: RingBuffer<WeatherReading, 64> = RingBuffer::new();
-
-    // Latest reading cache
     let mut latest_reading = WeatherReading::default();
-    let mut raw_data = RawSensorData::default();
+    let raw_data = RawSensorData::default();
 
     log::info!("Core systems initialized — entering main loop");
 
     // ── Phase 6: Main Loop ────────────────────────────────────────
 
     let mut uptime_ms: u64 = 0;
-    let tick_ms: u64 = 10; // 10ms tick
 
     loop {
-        // Update scheduler time
         scheduler.update_time(uptime_ms);
 
-        // Process all due tasks
         while let Some(task_id) = scheduler.next_due_task() {
             match task_id {
                 TaskId::ReadBme280 => {
                     // In real firmware: read from BME280 driver
-                    // let bme_reading = bme280.read();
+                    // let bme_reading = bme280.read()?;
                     // raw_data.temperature_c = Some(bme_reading.temperature_c);
-                    // raw_data.humidity_pct = Some(bme_reading.humidity_pct);
-                    // raw_data.pressure_hpa = Some(bme_reading.pressure_hpa);
                     log::debug!("Task: ReadBme280");
                 }
 
                 TaskId::ReadWind => {
-                    // In real firmware: read anemometer + wind vane
-                    // let speed = anemometer.read(uptime_ms as u32);
-                    // let dir = wind_vane.read();
-                    // raw_data.wind_speed_kmh = Some(speed.speed_kmh);
-                    // raw_data.wind_direction_deg = Some(dir.direction_deg as f32);
                     log::debug!("Task: ReadWind");
                 }
 
                 TaskId::ReadRain => {
-                    // In real firmware: read rain gauge
-                    // let rain = rain_gauge.read(uptime_ms as u32);
-                    // raw_data.rain_total_mm = rain.total_mm;
-                    // raw_data.rain_rate_mm_hr = Some(rain.rate_mm_hr);
                     log::debug!("Task: ReadRain");
                 }
 
                 TaskId::ReadUvLight => {
-                    // In real firmware: read SI1145 + BH1750
-                    // let uv = si1145.read();
-                    // let light = bh1750.read();
-                    // raw_data.uv_index = Some(uv.uv_index);
-                    // raw_data.light_lux = Some(light.lux);
                     log::debug!("Task: ReadUvLight");
                 }
 
                 TaskId::ProcessData => {
-                    // Run the data pipeline
                     latest_reading = pipeline.process(&raw_data, uptime_ms);
 
-                    // Buffer for communication tasks
-                    let _ = reading_buffer.push(latest_reading.clone());
+                    if !reading_buffer.push(latest_reading.clone()) {
+                        log::warn!("Reading buffer full — dropping oldest");
+                    }
 
-                    // Store to flash
-                    let _ = flash_storage.store(&latest_reading);
+                    if let Err(e) = flash_storage.store(&latest_reading) {
+                        log::warn!("Flash store failed: {}", e);
+                    }
 
-                    // Update HTTP cache
                     http.update_reading(&latest_reading);
-
                     log::debug!("Task: ProcessData — reading buffered");
                 }
 
                 TaskId::PublishTelemetry => {
                     if wifi.is_connected() {
                         if let Err(e) = mqtt.publish_telemetry(&latest_reading) {
-                            log::warn!("MQTT publish failed: {}", e);
-                            // Buffer to flash for later retry
-                            let _ = flash_storage.store(&latest_reading);
+                            log::warn!("MQTT publish failed: {} — buffering to flash", e);
+                            if let Err(e2) = flash_storage.store(&latest_reading) {
+                                log::error!("Flash fallback also failed: {}", e2);
+                            }
                         }
                     }
-
-                    // Always try LoRa if available
-                    // if lora.state() == LoraState::Standby {
-                    //     let _ = lora.send_reading(&latest_reading, (uptime_ms / 1000) as u32);
-                    // }
-
                     log::debug!("Task: PublishTelemetry");
                 }
 
                 TaskId::PublishStatus => {
                     let battery = power.battery();
                     if mqtt.is_connected() {
-                        let _ = mqtt.publish_status(
+                        if let Err(e) = mqtt.publish_status(
                             uptime_ms / 1000,
                             battery.voltage_v,
                             battery.percentage,
                             wifi.rssi().unwrap_or(0),
-                            0, // free heap — would come from allocator stats
+                            0, // free heap — from allocator stats in real firmware
                             flash_storage.usage_pct(),
-                        );
+                        ) {
+                            log::warn!("Status publish failed: {}", e);
+                        }
                     }
                     log::debug!("Task: PublishStatus");
                 }
 
                 TaskId::UpdateBle => {
-                    let _ = ble.update_reading(&latest_reading);
+                    if let Err(e) = ble.update_reading(&latest_reading) {
+                        log::debug!("BLE update skipped: {}", e);
+                    }
 
-                    // Check for WiFi provisioning from BLE
                     if let Some(wifi_config) = ble.take_wifi_config() {
                         log::info!("BLE: WiFi provisioning received");
                         wifi.set_credentials(
                             wifi_config.ssid.as_str(),
                             wifi_config.password.as_str(),
                         );
-                        let _ = wifi.init();
+                        if let Err(e) = wifi.init() {
+                            log::warn!("WiFi re-init after BLE provisioning failed: {}", e);
+                        }
                     }
-
                     log::debug!("Task: UpdateBle");
                 }
 
                 TaskId::CheckOta => {
                     if wifi.is_connected() && ota.should_check(uptime_ms) {
-                        let _ = ota.check_for_update(uptime_ms);
+                        if let Err(e) = ota.check_for_update(uptime_ms) {
+                            log::warn!("OTA check failed: {}", e);
+                        }
                     }
                     log::debug!("Task: CheckOta");
                 }
 
                 TaskId::FeedWatchdog => {
-                    // In real firmware: feed the hardware watchdog timer
-                    // wdt.feed();
+                    // In real firmware: wdt.feed();
                 }
 
                 TaskId::ReadBattery => {
-                    // In real firmware: read ADC
-                    // let adc_raw = adc.read(battery_channel);
-                    // power.update_battery(adc_raw);
+                    // In real firmware: power.update_battery(adc.read(channel));
                     log::debug!("Task: ReadBattery");
                 }
             }
@@ -286,7 +270,7 @@ fn main() -> ! {
 
         let time_until_next = scheduler.time_until_next_ms();
 
-        if time_until_next > 10 {
+        if time_until_next > config::MAIN_LOOP_TICK_MS {
             power.signal_idle(uptime_ms);
         } else {
             power.signal_busy();
@@ -296,83 +280,51 @@ fn main() -> ! {
 
         if power.deep_sleep_pending() {
             log::info!("Entering deep sleep...");
-            // In real firmware:
-            // 1. Flush MQTT
-            // 2. Send final LoRa status
-            // 3. Save state to NVS
-            // 4. Enter deep sleep
-            // esp_hal::sleep::deep_sleep(...)
+            // In real firmware: flush MQTT, send final LoRa, save NVS, deep_sleep()
         }
 
-        // Check for system errors
         if SYSTEM_ERROR.load(Ordering::Relaxed) {
             log::error!("System error flag set — attempting recovery");
             SYSTEM_ERROR.store(false, Ordering::Relaxed);
         }
 
-        // Advance time (simulated tick — in real firmware this comes from a timer)
-        uptime_ms += tick_ms;
+        uptime_ms += config::MAIN_LOOP_TICK_MS;
 
-        // Yield / small delay to prevent busy-spinning
-        // In real firmware: embassy_time::Timer::after_millis(tick_ms).await
-        for _ in 0..tick_ms * 1000 {
+        // In real firmware: embassy_time::Timer::after_millis(MAIN_LOOP_TICK_MS).await
+        for _ in 0..config::MAIN_LOOP_TICK_MS * 1000 {
             core::hint::spin_loop();
         }
     }
 }
 
-/// Initialize all sensors and return their status.
+/// Initialize all sensors and return their aggregate status.
 fn init_sensors() -> SensorStatusMap {
     let mut status = SensorStatusMap::default();
 
-    // BME280
-    // In real firmware: probe I2C device
     log::info!("Probing BME280 at 0x{:02X}...", config::BME280_ADDR);
     status.bme280 = drivers::SensorStatus::Ok;
 
-    // Wind sensors
     log::info!("Initializing anemometer on GPIO {}...", config::WIND_SPEED_PIN);
     log::info!("Probing AS5600 at 0x{:02X}...", config::AS5600_ADDR);
     status.wind = drivers::SensorStatus::Ok;
 
-    // Rain gauge
     log::info!("Initializing rain gauge on GPIO {}...", config::RAIN_GAUGE_PIN);
     status.rain = drivers::SensorStatus::Ok;
 
-    // UV sensor
     log::info!("Probing SI1145 at 0x{:02X}...", config::SI1145_ADDR);
     status.uv = drivers::SensorStatus::Ok;
 
-    // Light sensor
     log::info!("Probing BH1750 at 0x{:02X}...", config::BH1750_ADDR);
     status.light = drivers::SensorStatus::Ok;
 
     status
 }
 
-/// Format device ID as a string for MQTT client ID.
-fn format_device_id(id: u16) -> heapless::String<16> {
-    let mut s = heapless::String::new();
-    let _ = core::fmt::write(
-        &mut HeaplessWriter(&mut s),
-        format_args!("ws-{:04X}", id),
-    );
-    s
-}
-
-struct HeaplessWriter<'a, const N: usize>(&'a mut heapless::String<N>);
-
-impl<const N: usize> core::fmt::Write for HeaplessWriter<'_, N> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.0.push_str(s).map_err(|_| core::fmt::Error)
-    }
-}
-
-/// Panic handler.
+/// Panic handler — logs the panic and halts. In real firmware this would
+/// save crash info to NVS and let the hardware watchdog trigger a reset.
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
     log::error!("PANIC: {}", info);
-    // In real firmware: save crash info to NVS, trigger WDT reset
     loop {
         core::hint::spin_loop();
     }

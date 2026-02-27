@@ -1,0 +1,32 @@
+# Rust build artifacts
+/target/
+firmware/target/
+
+# Cargo lock for binary crate (keep it committed)
+# Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# ESP-IDF build
+build/
+sdkconfig
+sdkconfig.old
+
+# Environment and secrets
+.env
+*.pem
+*.key
+
+# Debug artifacts
+*.elf
+*.bin
+*.map
