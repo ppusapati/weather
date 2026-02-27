@@ -99,12 +99,18 @@ pub struct AgricultureAnalytics {
     /// Today's min/max for GDD calculation.
     today_temp_min_c: f32,
     today_temp_max_c: f32,
+    /// Whether any temperature readings were received today.
+    today_has_readings: bool,
     /// Base temperature for GDD (crop-specific).
     gdd_base_temp_c: f32,
     /// Consecutive hours of leaf wetness (for disease models).
     leaf_wet_hours: f32,
     /// Last frost alert sent (to avoid duplicates).
     last_frost_alert: FrostRisk,
+    /// Last irrigation alert sent (to avoid duplicates).
+    last_irrigation_alert: IrrigationStatus,
+    /// Last disease alert state (to avoid duplicates).
+    last_disease_alert_sent: bool,
 }
 
 impl AgricultureAnalytics {
@@ -113,9 +119,12 @@ impl AgricultureAnalytics {
             gdd_accumulated: 0.0,
             today_temp_min_c: f32::MAX,
             today_temp_max_c: f32::MIN,
+            today_has_readings: false,
             gdd_base_temp_c,
             leaf_wet_hours: 0.0,
             last_frost_alert: FrostRisk::None,
+            last_irrigation_alert: IrrigationStatus::Adequate,
+            last_disease_alert_sent: false,
         }
     }
 
@@ -145,6 +154,7 @@ impl AgricultureAnalytics {
 
         // Update daily min/max
         if let Some(temp) = air_temp_c {
+            self.today_has_readings = true;
             if temp < self.today_temp_min_c {
                 self.today_temp_min_c = temp;
             }
@@ -224,21 +234,26 @@ impl AgricultureAnalytics {
             }
         }
 
-        // Irrigation alert
-        if reading.irrigation == IrrigationStatus::IrrigateCritical {
-            let _ = alerts.push(IndustryAlert {
-                severity: AlertSeverity::Critical,
-                category: heapless::String::try_from("irrigation").unwrap_or_default(),
-                message: heapless::String::try_from(
-                    "Critical: soil moisture at wilting point, irrigate immediately",
-                )
-                .unwrap_or_default(),
-                timestamp_ms,
-            });
+        // Irrigation alert (only on state change to avoid flooding)
+        if reading.irrigation != self.last_irrigation_alert {
+            self.last_irrigation_alert = reading.irrigation;
+            if reading.irrigation == IrrigationStatus::IrrigateCritical {
+                let _ = alerts.push(IndustryAlert {
+                    severity: AlertSeverity::Critical,
+                    category: heapless::String::try_from("irrigation").unwrap_or_default(),
+                    message: heapless::String::try_from(
+                        "Critical: soil moisture at wilting point, irrigate immediately",
+                    )
+                    .unwrap_or_default(),
+                    timestamp_ms,
+                });
+            }
         }
 
-        // Disease risk alert
-        if reading.disease_risk_index >= 80 {
+        // Disease risk alert (only on transition to high risk)
+        let disease_high = reading.disease_risk_index >= 80;
+        if disease_high && !self.last_disease_alert_sent {
+            self.last_disease_alert_sent = true;
             let _ = alerts.push(IndustryAlert {
                 severity: AlertSeverity::Warning,
                 category: heapless::String::try_from("disease").unwrap_or_default(),
@@ -248,6 +263,8 @@ impl AgricultureAnalytics {
                 .unwrap_or_default(),
                 timestamp_ms,
             });
+        } else if !disease_high {
+            self.last_disease_alert_sent = false;
         }
 
         alerts
@@ -255,10 +272,15 @@ impl AgricultureAnalytics {
 
     /// End-of-day: finalize GDD and reset daily min/max.
     pub fn end_of_day(&mut self) {
-        let daily_gdd = self.compute_daily_gdd();
+        let daily_gdd = if self.today_has_readings {
+            self.compute_daily_gdd()
+        } else {
+            0.0
+        };
         self.gdd_accumulated += daily_gdd;
         self.today_temp_min_c = f32::MAX;
         self.today_temp_max_c = f32::MIN;
+        self.today_has_readings = false;
         log::info!(
             "Agriculture: day ended, GDD today={:.1}, total={:.1}",
             daily_gdd,
@@ -290,6 +312,11 @@ impl AgricultureAnalytics {
         let t = temp_c?;
         let rh = humidity_pct?;
 
+        // Guard: Tetens formula denominator (t + 237.3) must not be zero
+        if (t + 237.3).abs() < 1.0 {
+            return None;
+        }
+
         // Saturation vapor pressure (kPa) — Tetens formula
         let es = 0.6108 * libm::expf(17.27 * t / (t + 237.3));
         // Actual vapor pressure
@@ -304,18 +331,24 @@ impl AgricultureAnalytics {
             let gamma = config::ET_PSYCHROMETRIC_CONST * pressure / 100.0;
 
             // Slope of saturation vapor pressure curve
-            let delta = 4098.0 * es / ((t + 237.3) * (t + 237.3));
+            let denom_sq = (t + 237.3) * (t + 237.3);
+            let delta = 4098.0 * es / denom_sq;
 
             // Net radiation (MJ/m²/day) — rough conversion from instantaneous W/m²
             let rn = rs * 0.0864 * 0.77; // ×0.0864 for daily, ×0.77 net ratio
 
+            // Guard: (t + 273) must not be zero for temperature term
+            if (t + 273.0).abs() < 0.5 {
+                return None;
+            }
+
             let numerator = 0.408 * delta * rn + gamma * (900.0 / (t + 273.0)) * wind_m_s * vpd;
             let denominator = delta + gamma * (1.0 + 0.34 * wind_m_s);
 
-            if denominator > 0.0 {
-                Some((numerator / denominator).max(0.0))
-            } else {
+            if denominator.abs() < 0.0001 {
                 None
+            } else {
+                Some((numerator / denominator).max(0.0))
             }
         } else {
             // Hargreaves-Samani (temperature-only fallback)
@@ -424,7 +457,8 @@ impl AgricultureAnalytics {
         };
 
         let risk = (temp_factor * wetness_factor * 100.0).clamp(0.0, 100.0);
-        risk as u8
+        // Round to avoid truncation discontinuities (99.9 → 100, not 99)
+        libm::roundf(risk) as u8
     }
 
     /// Evaluate spray window suitability.

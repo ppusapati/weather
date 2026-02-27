@@ -129,6 +129,9 @@ pub const FLASH_DATA_START: u32 = 0x00819000;
 pub const FLASH_DATA_SIZE: u32 = 0x007E7000; // ~7.9 MB
 pub const FLASH_RECORD_SIZE: usize = 64;
 
+/// Minimum interval between flash writes (ms) to limit wear.
+pub const FLASH_WRITE_MIN_INTERVAL_MS: u64 = 30_000;
+
 // ---------- Ring Buffer ----------
 
 pub const READING_BUFFER_CAPACITY: usize = 64;
@@ -353,6 +356,54 @@ pub struct RuntimeConfig {
     pub panel_tilt_deg: f32,
     #[cfg(feature = "solar")]
     pub panel_azimuth_deg: f32,
+}
+
+impl RuntimeConfig {
+    /// Validate configuration values, clamping or correcting out-of-range fields.
+    /// Logs warnings for any values that were adjusted.
+    pub fn validate(&mut self) {
+        if self.telemetry_interval_s < 5 {
+            log::warn!("Config: telemetry_interval_s too low ({}), clamping to 5", self.telemetry_interval_s);
+            self.telemetry_interval_s = 5;
+        }
+        if self.status_interval_s < 10 {
+            log::warn!("Config: status_interval_s too low ({}), clamping to 10", self.status_interval_s);
+            self.status_interval_s = 10;
+        }
+        if !(1..=12).contains(&self.lora_spreading_factor) {
+            log::warn!("Config: invalid SF {}, resetting to {}", self.lora_spreading_factor, LORA_SPREADING_FACTOR);
+            self.lora_spreading_factor = LORA_SPREADING_FACTOR;
+        }
+        if self.lora_tx_power_dbm < 2 || self.lora_tx_power_dbm > 20 {
+            log::warn!("Config: TX power {} out of range, resetting to {}", self.lora_tx_power_dbm, LORA_TX_POWER_DBM);
+            self.lora_tx_power_dbm = LORA_TX_POWER_DBM;
+        }
+        if self.alert_wind_speed_kmh < 0.0 || self.alert_wind_speed_kmh > WIND_SPEED_MAX_KMH {
+            self.alert_wind_speed_kmh = 90.0;
+        }
+        if self.cal_temp_offset.abs() > 10.0 {
+            log::warn!("Config: temp cal offset {:.1} seems too large, clamping", self.cal_temp_offset);
+            self.cal_temp_offset = self.cal_temp_offset.clamp(-10.0, 10.0);
+        }
+        #[cfg(feature = "solar")]
+        {
+            if self.panel_wp <= 0.0 || self.panel_wp > 2000.0 {
+                log::warn!("Config: invalid panel_wp {}, resetting to {}", self.panel_wp, PANEL_NOMINAL_WP);
+                self.panel_wp = PANEL_NOMINAL_WP;
+            }
+            if self.panel_area_m2 <= 0.0 || self.panel_area_m2 > 20.0 {
+                log::warn!("Config: invalid panel_area_m2 {}, resetting to {}", self.panel_area_m2, PANEL_AREA_M2);
+                self.panel_area_m2 = PANEL_AREA_M2;
+            }
+        }
+        #[cfg(feature = "agriculture")]
+        {
+            if self.gdd_base_temp_c < -10.0 || self.gdd_base_temp_c > 30.0 {
+                log::warn!("Config: invalid gdd_base_temp {}, resetting to 10.0", self.gdd_base_temp_c);
+                self.gdd_base_temp_c = GDD_BASE_TEMP_CORN;
+            }
+        }
+    }
 }
 
 impl Default for RuntimeConfig {

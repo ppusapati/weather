@@ -238,10 +238,11 @@ impl DataPipeline {
 
         // --- Wind Direction ---
         if let Some(dir_raw) = raw.wind_direction_deg {
-            let calibrated = ((dir_raw as f32 + self.cal_wind_dir_offset) % 360.0 + 360.0) % 360.0;
-            reading.wind_dir_deg = Some(
-                self.wind_dir_filter.update(calibrated) as u16 % 360,
-            );
+            if dir_raw.is_finite() {
+                let calibrated = ((dir_raw + self.cal_wind_dir_offset) % 360.0 + 360.0) % 360.0;
+                let filtered = self.wind_dir_filter.update(calibrated);
+                reading.wind_dir_deg = Some((filtered as u16) % 360);
+            }
         }
 
         // --- Rain ---
@@ -300,9 +301,10 @@ fn validate_range(value: f32, min: f32, max: f32) -> bool {
 
 /// Compute heat index using the Rothfusz regression equation.
 /// Only valid when T >= 27°C and H >= 40%.
+/// Uses f64 intermediates to avoid precision loss in the polynomial.
 fn compute_heat_index(temp_c: Option<f32>, humidity: Option<f32>) -> Option<f32> {
-    let t = temp_c?;
-    let h = humidity?;
+    let t = temp_c? as f64;
+    let h = humidity? as f64;
 
     if t < 27.0 || h < 40.0 {
         return None;
@@ -318,7 +320,7 @@ fn compute_heat_index(temp_c: Option<f32>, humidity: Option<f32>) -> Option<f32>
         + 0.001 * t * h * h
         - 0.000004 * t * t * h * h;
 
-    Some(hi)
+    Some(hi as f32)
 }
 
 /// Compute dew point using the Magnus formula.
@@ -330,11 +332,22 @@ fn compute_dew_point(temp_c: Option<f32>, humidity: Option<f32>) -> Option<f32> 
         return None;
     }
 
-    let a = 17.67;
-    let b = 243.5;
-    let gamma = libm::logf(h / 100.0) + (a * t) / (b + t);
-    let dew_point = (b * gamma) / (a - gamma);
+    let a: f32 = 17.67;
+    let b: f32 = 243.5;
 
+    // Guard: (b + t) must not be zero
+    if (b + t).abs() < 0.1 {
+        return None;
+    }
+
+    let gamma = libm::logf(h / 100.0) + (a * t) / (b + t);
+
+    // Guard: (a - gamma) must not be zero to avoid division by zero
+    if (a - gamma).abs() < 0.001 {
+        return None;
+    }
+
+    let dew_point = (b * gamma) / (a - gamma);
     Some(dew_point)
 }
 
@@ -343,7 +356,7 @@ fn compute_wind_chill(temp_c: Option<f32>, wind_kmh: Option<f32>) -> Option<f32>
     let t = temp_c?;
     let v = wind_kmh?;
 
-    if t >= 10.0 || v <= 4.8 {
+    if t >= 10.0 || v < 5.0 {
         return None;
     }
 

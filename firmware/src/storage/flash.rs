@@ -42,6 +42,8 @@ pub struct FlashStorage {
     count: u32,
     /// Monotonically increasing sequence counter.
     sequence: u32,
+    /// Timestamp of last write (ms) for rate limiting.
+    last_write_ms: u64,
 }
 
 impl FlashStorage {
@@ -57,6 +59,7 @@ impl FlashStorage {
             write_index: 0,
             count: 0,
             sequence: 0,
+            last_write_ms: 0,
         }
     }
 
@@ -80,8 +83,16 @@ impl FlashStorage {
         Ok(())
     }
 
-    /// Store a weather reading to flash.
+    /// Store a weather reading to flash (rate-limited to prevent wear).
     pub fn store(&mut self, reading: &WeatherReading) -> Result<()> {
+        let now_ms = reading.timestamp_ms;
+        if now_ms.saturating_sub(self.last_write_ms) < config::FLASH_WRITE_MIN_INTERVAL_MS
+            && self.last_write_ms > 0
+        {
+            return Ok(()); // Skip — too soon since last write
+        }
+        self.last_write_ms = now_ms;
+
         // Serialize the reading to a compact binary format
         let mut payload = [0u8; 48];
         let payload_len = self.serialize_reading(reading, &mut payload);

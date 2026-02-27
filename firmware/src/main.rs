@@ -77,7 +77,8 @@ fn main() -> ! {
     log::info!("========================================");
 
     // Load configuration from NVS (or use defaults)
-    let runtime_config = RuntimeConfig::default();
+    let mut runtime_config = RuntimeConfig::default();
+    runtime_config.validate();
     log::info!("Config loaded: device_id={}", runtime_config.device_id);
 
     // ── Phase 2: Peripheral Initialization ────────────────────────
@@ -185,7 +186,14 @@ fn main() -> ! {
     loop {
         scheduler.update_time(uptime_ms);
 
-        while let Some(task_id) = scheduler.next_due_task() {
+        // Limit tasks per tick to prevent runaway scheduling if many tasks become due at once
+        let mut tasks_this_tick = 0u8;
+        const MAX_TASKS_PER_TICK: u8 = 8;
+        while tasks_this_tick < MAX_TASKS_PER_TICK {
+            let Some(task_id) = scheduler.next_due_task() else {
+                break;
+            };
+            tasks_this_tick += 1;
             match task_id {
                 TaskId::ReadBme280 => {
                     // In real firmware: read from BME280 driver

@@ -85,15 +85,22 @@ pub struct DailySolarSummary {
 // Analytics Engine
 // ──────────────────────────────────────────────────
 
+/// Typical panel-to-ambient temperature offset (NOCT delta) used when
+/// only ambient temperature is available for derating estimation.
+const NOCT_DELTA_C: f32 = 25.0;
+
 /// Solar energy analytics engine.
 pub struct SolarAnalytics {
     /// Panel rated power at STC (watts-peak).
     panel_wp: f32,
     /// Panel area (m²).
+    #[allow(dead_code)]
     panel_area_m2: f32,
 
     /// Running daily energy accumulator (Wh).
     daily_yield_wh: f32,
+    /// Running gross yield (before soiling) for loss calculation (Wh).
+    daily_gross_yield_wh: f32,
     /// Running peak sun hours accumulator.
     peak_sun_hours: f32,
     /// Days since last rain (for soiling model).
@@ -109,7 +116,16 @@ pub struct SolarAnalytics {
     pr_count: u32,
     /// Inverter efficiency (configurable, default 0.96).
     inverter_efficiency: f32,
+    /// Alert deduplication: last overheating alert state.
+    last_overheat_alert: bool,
+    /// Alert deduplication: last low-PR alert timestamp (ms).
+    last_low_pr_alert_ms: u64,
+    /// Alert deduplication: last soiling alert state.
+    last_soiling_alert: bool,
 }
+
+/// Minimum interval between repeated performance alerts (5 minutes).
+const ALERT_COOLDOWN_MS: u64 = 300_000;
 
 impl SolarAnalytics {
     pub fn new(panel_wp: f32, panel_area_m2: f32) -> Self {
@@ -117,6 +133,7 @@ impl SolarAnalytics {
             panel_wp,
             panel_area_m2,
             daily_yield_wh: 0.0,
+            daily_gross_yield_wh: 0.0,
             peak_sun_hours: 0.0,
             days_since_rain: 0,
             daily_summary: DailySolarSummary::default(),
@@ -125,6 +142,9 @@ impl SolarAnalytics {
             pr_sum: 0.0,
             pr_count: 0,
             inverter_efficiency: 0.96,
+            last_overheat_alert: false,
+            last_low_pr_alert_ms: 0,
+            last_soiling_alert: false,
         }
     }
 
@@ -152,8 +172,14 @@ impl SolarAnalytics {
         };
         self.last_sample_ms = now_ms;
 
-        // Temperature derating
-        let panel_temp = panel_temp_front_c.or(panel_temp_back_c).or(ambient_temp_c);
+        // Temperature derating — prefer panel sensor, fall back to ambient + NOCT delta
+        let panel_temp = if let Some(t) = panel_temp_front_c {
+            Some(t)
+        } else if let Some(t) = panel_temp_back_c {
+            Some(t)
+        } else {
+            ambient_temp_c.map(|t| t + NOCT_DELTA_C)
+        };
         reading.temp_derating_factor = panel_temp.map(|t| self.compute_temp_derating(t));
 
         // Soiling loss
@@ -162,18 +188,20 @@ impl SolarAnalytics {
         // Estimated power
         if let Some(irr) = irradiance_w_m2 {
             let derating = reading.temp_derating_factor.unwrap_or(1.0);
-            let soiling = 1.0 - (reading.soiling_loss_pct / 100.0);
-            let power = self.panel_wp
+            let soiling_factor = 1.0 - (reading.soiling_loss_pct / 100.0);
+
+            // Gross power (before soiling) for loss tracking
+            let gross_power = self.panel_wp
                 * (irr / config::STC_IRRADIANCE_W_M2)
                 * derating
-                * soiling
                 * self.inverter_efficiency;
+            let power = gross_power * soiling_factor;
             reading.estimated_power_w = Some(power.max(0.0));
 
-            // Accumulate energy
+            // Accumulate energy (net and gross separately)
             if dt_hours > 0.0 {
-                let energy_wh = power.max(0.0) * dt_hours;
-                self.daily_yield_wh += energy_wh;
+                self.daily_yield_wh += power.max(0.0) * dt_hours;
+                self.daily_gross_yield_wh += gross_power.max(0.0) * dt_hours;
             }
 
             // Peak sun hours: integrate irradiance / 1000
@@ -181,13 +209,12 @@ impl SolarAnalytics {
                 self.peak_sun_hours += irr / config::PEAK_SUN_HOUR_THRESHOLD_W_M2 * dt_hours;
             }
 
-            // Performance ratio
+            // Performance ratio — only meaningful above 1W theoretical
             if irr > 50.0 {
-                // Only compute PR when there's meaningful irradiance
                 let theoretical_power = self.panel_wp * (irr / config::STC_IRRADIANCE_W_M2);
-                if theoretical_power > 0.0 {
-                    let pr = power / theoretical_power;
-                    reading.performance_ratio = Some(pr.clamp(0.0, 1.2));
+                if theoretical_power > 1.0 {
+                    let pr = (power / theoretical_power).clamp(0.0, 1.2);
+                    reading.performance_ratio = Some(pr);
                     self.pr_sum += pr;
                     self.pr_count += 1;
                 }
@@ -240,13 +267,15 @@ impl SolarAnalytics {
         } else {
             0.0
         };
+        // Soiling loss = difference between gross (before soiling) and net yield
         self.daily_summary.soiling_loss_wh =
-            self.daily_yield_wh * (self.compute_soiling_loss() / 100.0);
+            (self.daily_gross_yield_wh - self.daily_yield_wh).max(0.0);
 
         let summary = self.daily_summary.clone();
 
         // Reset daily accumulators
         self.daily_yield_wh = 0.0;
+        self.daily_gross_yield_wh = 0.0;
         self.peak_sun_hours = 0.0;
         self.pr_sum = 0.0;
         self.pr_count = 0;
@@ -269,45 +298,52 @@ impl SolarAnalytics {
     }
 
     /// Generate alerts based on current solar conditions.
+    /// Uses state-change deduplication and cooldown to prevent alert flooding.
     pub fn check_alerts(
-        &self,
+        &mut self,
         reading: &SolarReading,
         timestamp_ms: u64,
     ) -> heapless::Vec<IndustryAlert, 4> {
         let mut alerts = heapless::Vec::new();
 
-        // Panel overheating alert
-        if let Some(temp) = reading.panel_temp_front_c {
-            if temp > 75.0 {
-                let _ = alerts.push(IndustryAlert {
-                    severity: AlertSeverity::Warning,
-                    category: heapless::String::try_from("panel_temp").unwrap_or_default(),
-                    message: heapless::String::try_from(
-                        "Panel temperature exceeds 75C — significant power derating",
-                    )
-                    .unwrap_or_default(),
-                    timestamp_ms,
-                });
-            }
+        // Panel overheating alert — only on state change
+        let overheat_now = reading
+            .panel_temp_front_c
+            .map_or(false, |temp| temp > 75.0);
+        if overheat_now && !self.last_overheat_alert {
+            let _ = alerts.push(IndustryAlert {
+                severity: AlertSeverity::Warning,
+                category: heapless::String::try_from("panel_temp").unwrap_or_default(),
+                message: heapless::String::try_from(
+                    "Panel temperature exceeds 75C — significant power derating",
+                )
+                .unwrap_or_default(),
+                timestamp_ms,
+            });
         }
+        self.last_overheat_alert = overheat_now;
 
-        // Low performance ratio
+        // Low performance ratio — cooldown to limit repeat alerts
         if let Some(pr) = reading.performance_ratio {
             if pr < 0.5 && reading.irradiance_w_m2.unwrap_or(0.0) > 200.0 {
-                let _ = alerts.push(IndustryAlert {
-                    severity: AlertSeverity::Warning,
-                    category: heapless::String::try_from("performance").unwrap_or_default(),
-                    message: heapless::String::try_from(
-                        "Low performance ratio (<50%) — check for shading or soiling",
-                    )
-                    .unwrap_or_default(),
-                    timestamp_ms,
-                });
+                if timestamp_ms.saturating_sub(self.last_low_pr_alert_ms) >= ALERT_COOLDOWN_MS {
+                    let _ = alerts.push(IndustryAlert {
+                        severity: AlertSeverity::Warning,
+                        category: heapless::String::try_from("performance").unwrap_or_default(),
+                        message: heapless::String::try_from(
+                            "Low performance ratio (<50%) — check for shading or soiling",
+                        )
+                        .unwrap_or_default(),
+                        timestamp_ms,
+                    });
+                    self.last_low_pr_alert_ms = timestamp_ms;
+                }
             }
         }
 
-        // High soiling loss
-        if reading.soiling_loss_pct > 2.0 {
+        // High soiling loss — only on state change
+        let soiling_high = reading.soiling_loss_pct > 2.0;
+        if soiling_high && !self.last_soiling_alert {
             let _ = alerts.push(IndustryAlert {
                 severity: AlertSeverity::Info,
                 category: heapless::String::try_from("soiling").unwrap_or_default(),
@@ -318,6 +354,7 @@ impl SolarAnalytics {
                 timestamp_ms,
             });
         }
+        self.last_soiling_alert = soiling_high;
 
         alerts
     }
