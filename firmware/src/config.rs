@@ -1,0 +1,200 @@
+/// Firmware configuration constants and runtime config.
+
+use serde::{Deserialize, Serialize};
+
+// ---------- Hardware Pin Assignments ----------
+
+/// I2C bus pins
+pub const I2C_SDA_PIN: u8 = 8;
+pub const I2C_SCL_PIN: u8 = 9;
+pub const I2C_FREQ_HZ: u32 = 400_000;
+
+/// SPI bus pins (LoRa SX1276)
+pub const SPI_MOSI_PIN: u8 = 10;
+pub const SPI_MISO_PIN: u8 = 11;
+pub const SPI_SCK_PIN: u8 = 12;
+pub const LORA_CS_PIN: u8 = 13;
+pub const LORA_RST_PIN: u8 = 14;
+pub const LORA_DIO0_PIN: u8 = 15;
+
+/// GPIO interrupt pins
+pub const WIND_SPEED_PIN: u8 = 4;
+pub const RAIN_GAUGE_PIN: u8 = 5;
+
+/// ADC pins
+pub const BATTERY_ADC_PIN: u8 = 6;
+
+/// UART pins
+pub const UART_TX_PIN: u8 = 43;
+pub const UART_RX_PIN: u8 = 44;
+pub const UART_BAUD_RATE: u32 = 115_200;
+
+/// Status LED
+pub const LED_PIN: u8 = 2;
+
+// ---------- I2C Addresses ----------
+
+pub const BME280_ADDR: u8 = 0x76;
+pub const AS5600_ADDR: u8 = 0x36;
+pub const SI1145_ADDR: u8 = 0x60;
+pub const BH1750_ADDR: u8 = 0x23;
+
+// ---------- Sensor Calibration ----------
+
+/// Wind speed: pulses per revolution
+pub const WIND_PULSES_PER_REV: f32 = 1.0;
+/// Wind speed factor: km/h per pulse per second
+pub const WIND_SPEED_FACTOR: f32 = 2.4;
+/// Rain gauge: mm per tip
+pub const RAIN_MM_PER_TIP: f32 = 0.2;
+
+// ---------- Sensor Validation Ranges ----------
+
+pub const TEMP_MIN_C: f32 = -40.0;
+pub const TEMP_MAX_C: f32 = 85.0;
+pub const HUMIDITY_MIN_PCT: f32 = 0.0;
+pub const HUMIDITY_MAX_PCT: f32 = 100.0;
+pub const PRESSURE_MIN_HPA: f32 = 300.0;
+pub const PRESSURE_MAX_HPA: f32 = 1100.0;
+pub const WIND_SPEED_MAX_KMH: f32 = 200.0;
+pub const RAIN_MAX_MM_HR: f32 = 500.0;
+pub const UV_INDEX_MAX: f32 = 15.0;
+pub const LIGHT_MAX_LUX: f32 = 120_000.0;
+
+// ---------- EMA Filter Coefficients ----------
+
+pub const EMA_ALPHA_TEMPERATURE: f32 = 0.3;
+pub const EMA_ALPHA_HUMIDITY: f32 = 0.3;
+pub const EMA_ALPHA_PRESSURE: f32 = 0.2;
+pub const EMA_ALPHA_WIND_SPEED: f32 = 0.7;
+pub const EMA_ALPHA_WIND_DIR: f32 = 0.5;
+pub const EMA_ALPHA_UV: f32 = 0.4;
+pub const EMA_ALPHA_LIGHT: f32 = 0.4;
+
+// ---------- Stuck Sensor Detection ----------
+
+pub const STUCK_SENSOR_THRESHOLD: u32 = 10;
+
+// ---------- Power Management ----------
+
+pub const BATTERY_FULL_V: f32 = 4.2;
+pub const BATTERY_EMPTY_V: f32 = 3.0;
+pub const BATTERY_LOW_THRESHOLD_PCT: u8 = 20;
+pub const BATTERY_CRITICAL_V: f32 = 3.3;
+pub const ADC_VREF: f32 = 3.3;
+pub const ADC_RESOLUTION: u16 = 4095;
+pub const BATTERY_DIVIDER_RATIO: f32 = 2.0;
+
+// ---------- LoRa Configuration ----------
+
+pub const LORA_FREQUENCY_HZ: u32 = 868_000_000; // EU868
+pub const LORA_SPREADING_FACTOR: u8 = 7;
+pub const LORA_BANDWIDTH_HZ: u32 = 125_000;
+pub const LORA_TX_POWER_DBM: i8 = 14;
+pub const LORA_CODING_RATE: u8 = 5; // 4/5
+
+// ---------- Timing ----------
+
+pub const SENSOR_READ_INTERVAL_MS: u64 = 10_000;
+pub const WIND_READ_INTERVAL_MS: u64 = 5_000;
+pub const UV_LIGHT_READ_INTERVAL_MS: u64 = 30_000;
+pub const MQTT_PUBLISH_INTERVAL_MS: u64 = 30_000;
+pub const STATUS_REPORT_INTERVAL_MS: u64 = 60_000;
+pub const OTA_CHECK_INTERVAL_MS: u64 = 6 * 3600 * 1000;
+pub const WATCHDOG_TIMEOUT_MS: u64 = 30_000;
+pub const WIFI_CONNECT_TIMEOUT_MS: u64 = 15_000;
+pub const WIFI_RETRY_MAX: u8 = 5;
+pub const DEEP_SLEEP_DURATION_S: u64 = 300;
+
+// ---------- MQTT Defaults ----------
+
+pub const MQTT_PORT_DEFAULT: u16 = 1883;
+pub const MQTT_TLS_PORT_DEFAULT: u16 = 8883;
+pub const MQTT_KEEPALIVE_S: u16 = 60;
+pub const MQTT_BUFFER_SIZE: usize = 1000;
+
+// ---------- HTTP ----------
+
+pub const HTTP_PORT: u16 = 80;
+pub const HTTP_MAX_CONNECTIONS: usize = 4;
+
+// ---------- Flash Storage ----------
+
+pub const FLASH_DATA_START: u32 = 0x00819000;
+pub const FLASH_DATA_SIZE: u32 = 0x007E7000; // ~7.9 MB
+pub const FLASH_RECORD_SIZE: usize = 64;
+
+// ---------- Ring Buffer ----------
+
+pub const READING_BUFFER_CAPACITY: usize = 64;
+
+// ---------- Firmware Info ----------
+
+pub const FIRMWARE_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const DEVICE_NAME_DEFAULT: &str = "WeatherStation";
+
+/// Runtime configuration stored in NVS.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeConfig {
+    pub device_name: heapless::String<32>,
+    pub device_id: u16,
+
+    // WiFi
+    pub wifi_ssid: heapless::String<32>,
+    pub wifi_password: heapless::String<64>,
+
+    // MQTT
+    pub mqtt_broker: heapless::String<64>,
+    pub mqtt_port: u16,
+    pub mqtt_use_tls: bool,
+    pub mqtt_username: heapless::String<32>,
+    pub mqtt_password: heapless::String<64>,
+
+    // Intervals (seconds)
+    pub telemetry_interval_s: u16,
+    pub status_interval_s: u16,
+
+    // Alert thresholds
+    pub alert_wind_speed_kmh: f32,
+    pub alert_temp_high_c: f32,
+    pub alert_temp_low_c: f32,
+    pub alert_rain_mm_hr: f32,
+
+    // LoRa
+    pub lora_spreading_factor: u8,
+    pub lora_tx_power_dbm: i8,
+
+    // Calibration offsets
+    pub cal_temp_offset: f32,
+    pub cal_humidity_offset: f32,
+    pub cal_pressure_offset: f32,
+    pub cal_wind_dir_offset: f32,
+}
+
+impl Default for RuntimeConfig {
+    fn default() -> Self {
+        Self {
+            device_name: heapless::String::try_from(DEVICE_NAME_DEFAULT).unwrap(),
+            device_id: 1,
+            wifi_ssid: heapless::String::new(),
+            wifi_password: heapless::String::new(),
+            mqtt_broker: heapless::String::new(),
+            mqtt_port: MQTT_PORT_DEFAULT,
+            mqtt_use_tls: false,
+            mqtt_username: heapless::String::new(),
+            mqtt_password: heapless::String::new(),
+            telemetry_interval_s: 30,
+            status_interval_s: 60,
+            alert_wind_speed_kmh: 90.0,
+            alert_temp_high_c: 40.0,
+            alert_temp_low_c: -10.0,
+            alert_rain_mm_hr: 50.0,
+            lora_spreading_factor: LORA_SPREADING_FACTOR,
+            lora_tx_power_dbm: LORA_TX_POWER_DBM,
+            cal_temp_offset: 0.0,
+            cal_humidity_offset: 0.0,
+            cal_pressure_offset: 0.0,
+            cal_wind_dir_offset: 0.0,
+        }
+    }
+}

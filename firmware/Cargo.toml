@@ -1,0 +1,47 @@
+[package]
+name = "weather-station"
+version = "1.0.0"
+edition = "2021"
+authors = ["Weather Station Team"]
+description = "ESP32-S3 Weather Station Firmware"
+
+[dependencies]
+# ESP32-S3 HAL
+esp-hal = { version = "0.22", features = ["esp32s3"] }
+esp-backtrace = { version = "0.14", features = ["esp32s3", "panic-handler", "println"] }
+esp-println = { version = "0.12", features = ["esp32s3", "log"] }
+esp-alloc = "0.6"
+esp-wifi = { version = "0.11", features = ["esp32s3", "wifi", "ble"] }
+esp-storage = { version = "0.3", features = ["esp32s3"] }
+
+# Embedded ecosystem
+embedded-hal = "1.0"
+embedded-io = "0.6"
+fugit = "0.3"
+critical-section = "1.2"
+
+# Async runtime
+embassy-executor = { version = "0.6", features = ["task-arena-size-65536"] }
+embassy-time = "0.4"
+embassy-sync = "0.6"
+
+# Data serialization
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+# Logging
+log = "0.4"
+
+# No-std compatible utilities
+heapless = "0.8"
+
+[profile.dev]
+opt-level = "s"
+debug = true
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+debug = false
+strip = "symbols"
