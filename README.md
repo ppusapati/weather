@@ -83,6 +83,30 @@ sensor acquisition and the other to communication.
 | **MQTT** | MQTT v3.1.1 over TCP/TLS | Cloud telemetry (over WiFi) |
 | **HTTP** | REST JSON API | Local web dashboard + OTA updates |
 
+## Industry Modules
+
+The firmware supports optional industry-specific extensions via Cargo features:
+
+| Feature | Industry | Additional Sensors | Analytics |
+|---------|----------|-------------------|-----------|
+| `agriculture` | Precision Farming | Soil moisture (×2), soil temp, leaf wetness | ET₀, GDD, frost alerts, irrigation scheduling, disease risk, spray windows |
+| `solar` | Photovoltaic Monitoring | Pyranometer, panel temp (×2), power meter | Irradiance, yield estimation, peak sun hours, performance ratio, soiling loss, cloud transients |
+| `all-industries` | Both | All above | All above |
+
+```bash
+# Build with agriculture module
+cargo build --release --features agriculture
+
+# Build with solar module
+cargo build --release --features solar
+
+# Build with all industry modules
+cargo build --release --features all-industries
+```
+
+See [docs/INDUSTRY_AGRICULTURE.md](docs/INDUSTRY_AGRICULTURE.md) and
+[docs/INDUSTRY_SOLAR.md](docs/INDUSTRY_SOLAR.md) for detailed documentation.
+
 ## Building
 
 ```bash
@@ -91,7 +115,7 @@ rustup install nightly
 cargo install espup
 espup install
 
-# Build
+# Build (base weather station)
 cd firmware
 cargo build --release --target xtensa-esp32s3-none-elf
 
@@ -131,7 +155,11 @@ weather/
 │       │   ├── wind.rs
 │       │   ├── rain.rs
 │       │   ├── uv.rs
-│       │   └── light.rs
+│       │   ├── light.rs
+│       │   ├── soil_moisture.rs  (agriculture)
+│       │   ├── soil_temp.rs      (agriculture/solar)
+│       │   ├── leaf_wetness.rs   (agriculture)
+│       │   └── pyranometer.rs    (solar)
 │       ├── comms/
 │       │   ├── mod.rs
 │       │   ├── wifi.rs
@@ -146,11 +174,16 @@ weather/
 │       │   ├── data_pipeline.rs
 │       │   ├── power.rs
 │       │   └── ota.rs
+│       ├── industry/
+│       │   ├── mod.rs
+│       │   ├── agriculture.rs    (agriculture)
+│       │   └── solar.rs          (solar)
 │       ├── storage/
 │       │   ├── mod.rs
 │       │   └── flash.rs
 │       └── utils/
 │           ├── mod.rs
+│           ├── fmt.rs
 │           ├── ring_buffer.rs
 │           └── crc.rs
 └── tests/

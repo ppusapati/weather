@@ -30,6 +30,11 @@ pub struct WeatherReading {
     pub wind_chill_c: Option<f32>,
     // Status
     pub sensor_status: SensorStatusMap,
+    // Industry-specific readings
+    #[cfg(feature = "agriculture")]
+    pub agriculture: Option<crate::industry::agriculture::AgricultureReading>,
+    #[cfg(feature = "solar")]
+    pub solar: Option<crate::industry::solar::SolarReading>,
 }
 
 impl Default for WeatherReading {
@@ -49,6 +54,10 @@ impl Default for WeatherReading {
             dew_point_c: None,
             wind_chill_c: None,
             sensor_status: SensorStatusMap::default(),
+            #[cfg(feature = "agriculture")]
+            agriculture: None,
+            #[cfg(feature = "solar")]
+            solar: None,
         }
     }
 }

@@ -30,6 +30,18 @@ pub enum TaskId {
     FeedWatchdog,
     /// Read battery level.
     ReadBattery,
+    /// Read agriculture sensors (soil moisture, soil temp, leaf wetness).
+    #[cfg(feature = "agriculture")]
+    ReadAgriculture,
+    /// Process agriculture analytics (ET, GDD, frost, irrigation).
+    #[cfg(feature = "agriculture")]
+    ProcessAgriculture,
+    /// Read solar sensors (pyranometer, panel temperature).
+    #[cfg(feature = "solar")]
+    ReadSolar,
+    /// Process solar analytics (yield, performance ratio).
+    #[cfg(feature = "solar")]
+    ProcessSolar,
 }
 
 /// A scheduled task.
@@ -48,15 +60,19 @@ pub struct ScheduledTask {
     pub last_duration_us: u32,
 }
 
+/// Maximum number of scheduled tasks (base 11 + industry tasks).
+const MAX_TASKS: usize = 15;
+
 /// Task scheduler.
 pub struct Scheduler {
-    tasks: [ScheduledTask; 11],
+    tasks: heapless::Vec<ScheduledTask, MAX_TASKS>,
     current_time_ms: u64,
 }
 
 impl Scheduler {
     pub fn new() -> Self {
-        let tasks = [
+        let mut tasks: heapless::Vec<ScheduledTask, MAX_TASKS> = heapless::Vec::new();
+        let base_tasks = [
             ScheduledTask {
                 id: TaskId::ReadBme280,
                 interval_ms: config::SENSOR_READ_INTERVAL_MS,
@@ -146,6 +162,52 @@ impl Scheduler {
                 last_duration_us: 0,
             },
         ];
+
+        for task in base_tasks {
+            let _ = tasks.push(task);
+        }
+
+        // Agriculture industry tasks
+        #[cfg(feature = "agriculture")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::ReadAgriculture,
+                interval_ms: config::SOIL_READ_INTERVAL_MS,
+                next_run_ms: 3000,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::ProcessAgriculture,
+                interval_ms: config::SOIL_READ_INTERVAL_MS,
+                next_run_ms: 3500,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
+
+        // Solar industry tasks
+        #[cfg(feature = "solar")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::ReadSolar,
+                interval_ms: config::SOLAR_READ_INTERVAL_MS,
+                next_run_ms: 2000,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::ProcessSolar,
+                interval_ms: config::SOLAR_READ_INTERVAL_MS,
+                next_run_ms: 2500,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
 
         Self {
             tasks,

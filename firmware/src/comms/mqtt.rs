@@ -252,6 +252,57 @@ impl MqttClient {
         self.publish(&topic, &payload, QoS::ExactlyOnce)
     }
 
+    /// Publish an agriculture reading to the agriculture telemetry topic.
+    #[cfg(feature = "agriculture")]
+    pub fn publish_agriculture(
+        &mut self,
+        reading: &crate::industry::agriculture::AgricultureReading,
+    ) -> Result<()> {
+        if self.state != MqttState::Connected {
+            return Err(Error::MqttPublishFailed);
+        }
+        let topic = self.make_topic("agriculture");
+        self.publish(&topic, reading, QoS::AtLeastOnce)
+    }
+
+    /// Publish a solar reading to the solar telemetry topic.
+    #[cfg(feature = "solar")]
+    pub fn publish_solar(
+        &mut self,
+        reading: &crate::industry::solar::SolarReading,
+    ) -> Result<()> {
+        if self.state != MqttState::Connected {
+            return Err(Error::MqttPublishFailed);
+        }
+        let topic = self.make_topic("solar");
+        self.publish(&topic, reading, QoS::AtLeastOnce)
+    }
+
+    /// Publish a daily solar summary.
+    #[cfg(feature = "solar")]
+    pub fn publish_solar_daily_summary(
+        &mut self,
+        summary: &crate::industry::solar::DailySolarSummary,
+    ) -> Result<()> {
+        if self.state != MqttState::Connected {
+            return Err(Error::MqttPublishFailed);
+        }
+        let topic = self.make_topic("solar/daily");
+        self.publish(&topic, summary, QoS::AtLeastOnce)
+    }
+
+    /// Publish an industry alert.
+    pub fn publish_industry_alert(
+        &mut self,
+        alert: &crate::industry::IndustryAlert,
+    ) -> Result<()> {
+        if self.state != MqttState::Connected {
+            return Err(Error::MqttPublishFailed);
+        }
+        let topic = self.make_topic("alerts/industry");
+        self.publish(&topic, alert, QoS::ExactlyOnce)
+    }
+
     /// Generic publish with serialization.
     fn publish<T: Serialize>(&mut self, topic: &str, payload: &T, qos: QoS) -> Result<()> {
         let mut buf = [0u8; 512];

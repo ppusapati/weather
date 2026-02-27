@@ -34,6 +34,7 @@ mod config;
 mod core;
 mod drivers;
 mod error;
+mod industry;
 mod storage;
 
 use crate::comms::ble::BleServer;
@@ -154,6 +155,27 @@ fn main() -> ! {
     let mut latest_reading = WeatherReading::default();
     let raw_data = RawSensorData::default();
 
+    // ── Phase 5b: Industry Module Initialization ──────────────────
+
+    #[cfg(feature = "agriculture")]
+    let mut ag_analytics = {
+        log::info!("Agriculture module enabled");
+        industry::agriculture::AgricultureAnalytics::new(runtime_config.gdd_base_temp_c)
+    };
+    #[cfg(feature = "agriculture")]
+    let mut ag_reading = industry::agriculture::AgricultureReading::default();
+
+    #[cfg(feature = "solar")]
+    let mut solar_analytics = {
+        log::info!("Solar module enabled");
+        industry::solar::SolarAnalytics::new(
+            runtime_config.panel_wp,
+            runtime_config.panel_area_m2,
+        )
+    };
+    #[cfg(feature = "solar")]
+    let mut solar_reading = industry::solar::SolarReading::default();
+
     log::info!("Core systems initialized — entering main loop");
 
     // ── Phase 6: Main Loop ────────────────────────────────────────
@@ -263,6 +285,97 @@ fn main() -> ! {
                     // In real firmware: power.update_battery(adc.read(channel));
                     log::debug!("Task: ReadBattery");
                 }
+
+                // ── Agriculture Tasks ─────────────────────────
+                #[cfg(feature = "agriculture")]
+                TaskId::ReadAgriculture => {
+                    // In real firmware: read soil moisture, soil temp, leaf wetness
+                    // let shallow = soil_moisture.read_shallow()?;
+                    // let deep = soil_moisture.read_deep()?;
+                    // let soil_t = soil_temp.read_temperature()?;
+                    // let leaf = leaf_wetness.read(uptime_ms)?;
+                    log::debug!("Task: ReadAgriculture");
+                }
+
+                #[cfg(feature = "agriculture")]
+                TaskId::ProcessAgriculture => {
+                    ag_reading = ag_analytics.process(
+                        latest_reading.temperature_c,
+                        latest_reading.humidity_pct,
+                        latest_reading.wind_speed_kmh,
+                        latest_reading.pressure_hpa,
+                        latest_reading.rain_rate_mm_hr,
+                        latest_reading.light_lux.map(|lux| lux * 0.0079), // rough lux→W/m²
+                        None, // soil moisture shallow — from sensor in real firmware
+                        None, // soil moisture deep
+                        None, // soil temp
+                        None, // leaf wetness
+                        0,    // leaf wet duration
+                    );
+                    latest_reading.agriculture = Some(ag_reading.clone());
+
+                    // Check alerts and publish
+                    let alerts = ag_analytics.check_alerts(&ag_reading, uptime_ms);
+                    for alert in &alerts {
+                        if mqtt.is_connected() {
+                            if let Err(e) = mqtt.publish_industry_alert(alert) {
+                                log::warn!("Agriculture alert publish failed: {}", e);
+                            }
+                        }
+                    }
+
+                    if mqtt.is_connected() {
+                        if let Err(e) = mqtt.publish_agriculture(&ag_reading) {
+                            log::warn!("Agriculture telemetry publish failed: {}", e);
+                        }
+                    }
+                    log::debug!("Task: ProcessAgriculture");
+                }
+
+                // ── Solar Tasks ───────────────────────────────
+                #[cfg(feature = "solar")]
+                TaskId::ReadSolar => {
+                    // In real firmware: read pyranometer, panel temp
+                    // let irr = pyranometer.read()?;
+                    // let panel_t = panel_temp.read_temperature()?;
+                    log::debug!("Task: ReadSolar");
+                }
+
+                #[cfg(feature = "solar")]
+                TaskId::ProcessSolar => {
+                    solar_reading = solar_analytics.process(
+                        None, // irradiance — from pyranometer in real firmware
+                        None, // panel temp front
+                        None, // panel temp back
+                        latest_reading.temperature_c,
+                        uptime_ms,
+                    );
+                    latest_reading.solar = Some(solar_reading.clone());
+
+                    // Detect rain for soiling reset
+                    if let Some(rate) = latest_reading.rain_rate_mm_hr {
+                        if rate > 1.0 {
+                            solar_analytics.rain_detected();
+                        }
+                    }
+
+                    // Check alerts and publish
+                    let alerts = solar_analytics.check_alerts(&solar_reading, uptime_ms);
+                    for alert in &alerts {
+                        if mqtt.is_connected() {
+                            if let Err(e) = mqtt.publish_industry_alert(alert) {
+                                log::warn!("Solar alert publish failed: {}", e);
+                            }
+                        }
+                    }
+
+                    if mqtt.is_connected() {
+                        if let Err(e) = mqtt.publish_solar(&solar_reading) {
+                            log::warn!("Solar telemetry publish failed: {}", e);
+                        }
+                    }
+                    log::debug!("Task: ProcessSolar");
+                }
             }
         }
 
@@ -316,6 +429,26 @@ fn init_sensors() -> SensorStatusMap {
 
     log::info!("Probing BH1750 at 0x{:02X}...", config::BH1750_ADDR);
     status.light = drivers::SensorStatus::Ok;
+
+    // Agriculture sensors
+    #[cfg(feature = "agriculture")]
+    {
+        log::info!("Initializing soil moisture on GPIO {}...", config::SOIL_MOISTURE_ADC_PIN);
+        status.soil_moisture = drivers::SensorStatus::Ok;
+        log::info!("Initializing soil temp (DS18B20) on GPIO {}...", config::SOIL_TEMP_PIN);
+        status.soil_temp = drivers::SensorStatus::Ok;
+        log::info!("Initializing leaf wetness on GPIO {}...", config::LEAF_WETNESS_ADC_PIN);
+        status.leaf_wetness = drivers::SensorStatus::Ok;
+    }
+
+    // Solar sensors
+    #[cfg(feature = "solar")]
+    {
+        log::info!("Initializing pyranometer on GPIO {}...", config::PYRANOMETER_ADC_PIN);
+        status.pyranometer = drivers::SensorStatus::Ok;
+        log::info!("Initializing panel temp (DS18B20) on GPIO {}...", config::PANEL_TEMP_PIN);
+        status.panel_temp = drivers::SensorStatus::Ok;
+    }
 
     status
 }

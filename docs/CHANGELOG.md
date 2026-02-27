@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-02-27
+
+### Added — Industry Modules
+- **Agriculture module** (`--features agriculture`):
+  - Sensor drivers: capacitive soil moisture (dual-depth), DS18B20 soil temperature, leaf wetness
+  - Evapotranspiration (ET₀) — FAO Penman-Monteith with Hargreaves-Samani fallback
+  - Growing Degree Days (GDD) — configurable base temperature for 5 crop types
+  - Frost alerts — multi-level (Watch/Warning/Critical) with humidity-adjusted radiative frost
+  - Irrigation scheduling — soil moisture depletion model (field capacity to wilting point)
+  - Disease risk index — Smith period model (leaf wetness duration × temperature)
+  - Spray window assessment — wind, rain, and temperature inversion detection
+- **Solar module** (`--features solar`):
+  - Sensor drivers: ML8511 pyranometer, DS18B20 panel temperature (front/back)
+  - Solar irradiance tracking (GHI) with ADC-to-W/m² calibration
+  - Temperature derating — panel power loss from overheating (-0.35%/°C above STC)
+  - Estimated power output — incorporates irradiance, derating, soiling, inverter efficiency
+  - Daily energy yield integration (Wh) and peak sun hours (PSH) accumulation
+  - Performance ratio — actual vs theoretical power ratio with daily averaging
+  - Soiling loss estimation — days-since-rain accumulation model, rain auto-reset
+  - Cloud transient detection — rapid irradiance change alerting
+  - Sky condition classification (Clear/PartlyCloudy/Overcast/Night)
+  - Daily summary reports (total yield, peak power, cloud transients)
+- Cargo feature flags: `agriculture`, `solar`, `all-industries`
+- Industry-specific MQTT topics and alert publishing
+- Industry sensor status tracking in `SensorStatusMap`
+- Industry hardware documentation with circuit diagrams and pin mappings
+- Scheduler dynamically adds industry tasks based on enabled features
+
 ## [0.1.0] - 2026-02-27
 
 ### Added
