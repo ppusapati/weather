@@ -66,6 +66,7 @@ pub enum SensorKind {
     LeafWetness,
     Pyranometer,
     PanelTemperature,
+    Pm25,
 }
 
 impl fmt::Display for Error {
@@ -123,6 +124,7 @@ impl fmt::Display for SensorKind {
             SensorKind::LeafWetness => write!(f, "Leaf Wetness"),
             SensorKind::Pyranometer => write!(f, "Pyranometer"),
             SensorKind::PanelTemperature => write!(f, "Panel Temperature"),
+            SensorKind::Pm25 => write!(f, "PM2.5"),
         }
     }
 }

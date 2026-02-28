@@ -91,7 +91,8 @@ The firmware supports optional industry-specific extensions via Cargo features:
 |---------|----------|-------------------|-----------|
 | `agriculture` | Precision Farming | Soil moisture (×2), soil temp, leaf wetness | ET₀, GDD, frost alerts, irrigation scheduling, disease risk, spray windows |
 | `solar` | Photovoltaic Monitoring | Pyranometer, panel temp (×2), power meter | Irradiance, yield estimation, peak sun hours, performance ratio, soiling loss, cloud transients |
-| `all-industries` | Both | All above | All above |
+| `india` | Indian Regional | PM2.5 particulate sensor | Monsoon tracking, IMD heat wave alerts, cyclone detection, NAQI air quality, IST timezone, IN865 LoRa |
+| `all-industries` | All | All above | All above |
 
 ```bash
 # Build with agriculture module
@@ -100,12 +101,16 @@ cargo build --release --features agriculture
 # Build with solar module
 cargo build --release --features solar
 
+# Build with India regional module
+cargo build --release --features india
+
 # Build with all industry modules
 cargo build --release --features all-industries
 ```
 
-See [docs/INDUSTRY_AGRICULTURE.md](docs/INDUSTRY_AGRICULTURE.md) and
-[docs/INDUSTRY_SOLAR.md](docs/INDUSTRY_SOLAR.md) for detailed documentation.
+See [docs/INDUSTRY_AGRICULTURE.md](docs/INDUSTRY_AGRICULTURE.md),
+[docs/INDUSTRY_SOLAR.md](docs/INDUSTRY_SOLAR.md), and
+[docs/INDUSTRY_INDIA.md](docs/INDUSTRY_INDIA.md) for detailed documentation.
 
 ## Building
 
@@ -133,6 +138,7 @@ weather/
 │   ├── REQUIREMENTS.md
 │   ├── API.md
 │   ├── HARDWARE.md
+│   ├── INDUSTRY_INDIA.md
 │   └── diagrams/
 │       ├── system_architecture.md
 │       ├── circuit_diagram.md
@@ -159,7 +165,8 @@ weather/
 │       │   ├── soil_moisture.rs  (agriculture)
 │       │   ├── soil_temp.rs      (agriculture/solar)
 │       │   ├── leaf_wetness.rs   (agriculture)
-│       │   └── pyranometer.rs    (solar)
+│       │   ├── pyranometer.rs    (solar)
+│       │   └── pm25.rs           (india)
 │       ├── comms/
 │       │   ├── mod.rs
 │       │   ├── wifi.rs
@@ -177,7 +184,8 @@ weather/
 │       ├── industry/
 │       │   ├── mod.rs
 │       │   ├── agriculture.rs    (agriculture)
-│       │   └── solar.rs          (solar)
+│       │   ├── solar.rs          (solar)
+│       │   └── india.rs          (india)
 │       ├── storage/
 │       │   ├── mod.rs
 │       │   └── flash.rs

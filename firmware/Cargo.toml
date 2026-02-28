@@ -42,7 +42,8 @@ libm = "0.2"
 default = []
 agriculture = []
 solar = []
-all-industries = ["agriculture", "solar"]
+india = []
+all-industries = ["agriculture", "solar", "india"]
 
 [profile.dev]
 opt-level = "s"

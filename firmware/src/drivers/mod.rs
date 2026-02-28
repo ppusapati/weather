@@ -23,6 +23,10 @@ pub mod soil_temp;
 #[cfg(feature = "solar")]
 pub mod pyranometer;
 
+// India sensors
+#[cfg(feature = "india")]
+pub mod pm25;
+
 use serde::{Deserialize, Serialize};
 
 /// Status of an individual sensor.
@@ -67,6 +71,8 @@ pub struct SensorStatusMap {
     pub pyranometer: SensorStatus,
     #[cfg(feature = "solar")]
     pub panel_temp: SensorStatus,
+    #[cfg(feature = "india")]
+    pub pm25: SensorStatus,
 }
 
 impl Default for SensorStatusMap {
@@ -87,6 +93,8 @@ impl Default for SensorStatusMap {
             pyranometer: SensorStatus::NotFound,
             #[cfg(feature = "solar")]
             panel_temp: SensorStatus::NotFound,
+            #[cfg(feature = "india")]
+            pm25: SensorStatus::NotFound,
         }
     }
 }

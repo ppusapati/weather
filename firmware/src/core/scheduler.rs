@@ -42,6 +42,12 @@ pub enum TaskId {
     /// Process solar analytics (yield, performance ratio).
     #[cfg(feature = "solar")]
     ProcessSolar,
+    /// Read India-specific sensors (PM2.5).
+    #[cfg(feature = "india")]
+    ReadIndia,
+    /// Process India regional analytics (monsoon, heat wave, cyclone, AQI).
+    #[cfg(feature = "india")]
+    ProcessIndia,
 }
 
 /// A scheduled task.
@@ -61,7 +67,7 @@ pub struct ScheduledTask {
 }
 
 /// Maximum number of scheduled tasks (base 11 + industry tasks).
-const MAX_TASKS: usize = 15;
+const MAX_TASKS: usize = 17;
 
 /// Task scheduler.
 pub struct Scheduler {
@@ -203,6 +209,27 @@ impl Scheduler {
                 id: TaskId::ProcessSolar,
                 interval_ms: config::SOLAR_READ_INTERVAL_MS,
                 next_run_ms: 2500,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
+
+        // India regional tasks
+        #[cfg(feature = "india")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::ReadIndia,
+                interval_ms: config::INDIA_PROCESS_INTERVAL_MS,
+                next_run_ms: 4000,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::ProcessIndia,
+                interval_ms: config::INDIA_PROCESS_INTERVAL_MS,
+                next_run_ms: 4500,
                 enabled: true,
                 run_count: 0,
                 last_duration_us: 0,

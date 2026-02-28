@@ -35,6 +35,8 @@ pub struct WeatherReading {
     pub agriculture: Option<crate::industry::agriculture::AgricultureReading>,
     #[cfg(feature = "solar")]
     pub solar: Option<crate::industry::solar::SolarReading>,
+    #[cfg(feature = "india")]
+    pub india: Option<crate::industry::india::IndiaReading>,
 }
 
 impl Default for WeatherReading {
@@ -58,6 +60,8 @@ impl Default for WeatherReading {
             agriculture: None,
             #[cfg(feature = "solar")]
             solar: None,
+            #[cfg(feature = "india")]
+            india: None,
         }
     }
 }

@@ -177,6 +177,17 @@ fn main() -> ! {
     #[cfg(feature = "solar")]
     let mut solar_reading = industry::solar::SolarReading::default();
 
+    #[cfg(feature = "india")]
+    let mut india_analytics = {
+        log::info!("India regional module enabled (region: {:?})", runtime_config.india_region);
+        industry::india::IndiaAnalytics::new(
+            runtime_config.india_gdd_base_temp_c,
+            runtime_config.india_region,
+        )
+    };
+    #[cfg(feature = "india")]
+    let mut india_reading = industry::india::IndiaReading::default();
+
     log::info!("Core systems initialized — entering main loop");
 
     // ── Phase 6: Main Loop ────────────────────────────────────────
@@ -384,6 +395,48 @@ fn main() -> ! {
                     }
                     log::debug!("Task: ProcessSolar");
                 }
+
+                // ── India Regional Tasks ────────────────────────
+                #[cfg(feature = "india")]
+                TaskId::ReadIndia => {
+                    // In real firmware: read PM2.5 sensor
+                    // let pm25 = pm25_sensor.read()?;
+                    log::debug!("Task: ReadIndia");
+                }
+
+                #[cfg(feature = "india")]
+                TaskId::ProcessIndia => {
+                    // Month would come from RTC in real firmware; use 6 (June) as placeholder
+                    let month: u8 = 6;
+                    india_reading = india_analytics.process(
+                        latest_reading.temperature_c,
+                        latest_reading.humidity_pct,
+                        latest_reading.wind_speed_kmh,
+                        latest_reading.pressure_hpa,
+                        latest_reading.rain_rate_mm_hr,
+                        None,  // PM2.5 — from sensor in real firmware
+                        month,
+                        uptime_ms,
+                    );
+                    latest_reading.india = Some(india_reading.clone());
+
+                    // Check alerts and publish
+                    let alerts = india_analytics.check_alerts(&india_reading, uptime_ms);
+                    for alert in &alerts {
+                        if mqtt.is_connected() {
+                            if let Err(e) = mqtt.publish_industry_alert(alert) {
+                                log::warn!("India alert publish failed: {}", e);
+                            }
+                        }
+                    }
+
+                    if mqtt.is_connected() {
+                        if let Err(e) = mqtt.publish_india(&india_reading) {
+                            log::warn!("India telemetry publish failed: {}", e);
+                        }
+                    }
+                    log::debug!("Task: ProcessIndia");
+                }
             }
         }
 
@@ -456,6 +509,13 @@ fn init_sensors() -> SensorStatusMap {
         status.pyranometer = drivers::SensorStatus::Ok;
         log::info!("Initializing panel temp (DS18B20) on GPIO {}...", config::PANEL_TEMP_PIN);
         status.panel_temp = drivers::SensorStatus::Ok;
+    }
+
+    // India sensors
+    #[cfg(feature = "india")]
+    {
+        log::info!("Initializing PM2.5 sensor on GPIO {}...", config::PM25_SENSOR_ADC_PIN);
+        status.pm25 = drivers::SensorStatus::Ok;
     }
 
     status

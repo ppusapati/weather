@@ -297,6 +297,73 @@ pub const EMA_ALPHA_IRRADIANCE: f32 = 0.5;
 #[cfg(feature = "solar")]
 pub const EMA_ALPHA_PANEL_TEMP: f32 = 0.3;
 
+// ========== INDIA REGIONAL ==========
+
+/// PM2.5 particulate sensor ADC pin (optional, for AQI).
+#[cfg(feature = "india")]
+pub const PM25_SENSOR_ADC_PIN: u8 = 21;
+
+/// India analytics processing interval (ms).
+#[cfg(feature = "india")]
+pub const INDIA_PROCESS_INTERVAL_MS: u64 = 30_000;
+
+/// IST offset from UTC in milliseconds (5 hours 30 minutes).
+#[cfg(feature = "india")]
+pub const IST_OFFSET_MS: i64 = 5 * 3600 * 1000 + 30 * 60 * 1000;
+
+/// LoRa frequency for India ISM band (IN865: 865.0–867.0 MHz).
+#[cfg(feature = "india")]
+pub const LORA_FREQUENCY_IN865_HZ: u32 = 865_062_500;
+
+/// Heat wave thresholds — Plains (most of India).
+#[cfg(feature = "india")]
+pub const INDIA_HEAT_WAVE_PLAINS_C: f32 = 40.0;
+#[cfg(feature = "india")]
+pub const INDIA_SEVERE_HEAT_WAVE_PLAINS_C: f32 = 45.0;
+
+/// Heat wave thresholds — Coastal regions.
+#[cfg(feature = "india")]
+pub const INDIA_HEAT_WAVE_COASTAL_C: f32 = 37.0;
+#[cfg(feature = "india")]
+pub const INDIA_SEVERE_HEAT_WAVE_COASTAL_C: f32 = 41.0;
+
+/// Heat wave thresholds — Hill stations.
+#[cfg(feature = "india")]
+pub const INDIA_HEAT_WAVE_HILL_C: f32 = 30.0;
+#[cfg(feature = "india")]
+pub const INDIA_SEVERE_HEAT_WAVE_HILL_C: f32 = 34.0;
+
+/// Monsoon onset detection: minimum daily rainfall (mm) to count as a rain day.
+#[cfg(feature = "india")]
+pub const INDIA_MONSOON_ONSET_RAIN_MM: f32 = 2.5;
+/// Monsoon onset detection: consecutive rain days to declare onset.
+#[cfg(feature = "india")]
+pub const INDIA_MONSOON_ONSET_DAYS: u16 = 5;
+
+/// Cyclone pressure drop thresholds (hPa over 3 hours).
+#[cfg(feature = "india")]
+pub const INDIA_CYCLONE_WATCH_DROP_HPA: f32 = 3.0;
+#[cfg(feature = "india")]
+pub const INDIA_CYCLONE_WARNING_DROP_HPA: f32 = 5.0;
+#[cfg(feature = "india")]
+pub const INDIA_CYCLONE_SEVERE_DROP_HPA: f32 = 8.0;
+
+/// GDD base temperatures for Indian crops (°C).
+#[cfg(feature = "india")]
+pub const GDD_BASE_TEMP_RICE_INDIA: f32 = 10.0;
+#[cfg(feature = "india")]
+pub const GDD_BASE_TEMP_WHEAT_INDIA: f32 = 0.0;
+#[cfg(feature = "india")]
+pub const GDD_BASE_TEMP_SUGARCANE: f32 = 12.0;
+#[cfg(feature = "india")]
+pub const GDD_BASE_TEMP_TEA: f32 = 7.0;
+#[cfg(feature = "india")]
+pub const GDD_BASE_TEMP_JUTE: f32 = 15.0;
+
+/// EMA alpha for PM2.5 sensor.
+#[cfg(feature = "india")]
+pub const EMA_ALPHA_PM25: f32 = 0.2;
+
 // ---------- Firmware Info ----------
 
 pub const FIRMWARE_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -356,6 +423,14 @@ pub struct RuntimeConfig {
     pub panel_tilt_deg: f32,
     #[cfg(feature = "solar")]
     pub panel_azimuth_deg: f32,
+
+    // India regional config
+    #[cfg(feature = "india")]
+    pub india_region: crate::industry::india::IndiaRegion,
+    #[cfg(feature = "india")]
+    pub india_gdd_base_temp_c: f32,
+    #[cfg(feature = "india")]
+    pub india_crop_type: heapless::String<16>,
 }
 
 impl RuntimeConfig {
@@ -403,6 +478,13 @@ impl RuntimeConfig {
                 self.gdd_base_temp_c = GDD_BASE_TEMP_CORN;
             }
         }
+        #[cfg(feature = "india")]
+        {
+            if self.india_gdd_base_temp_c < -10.0 || self.india_gdd_base_temp_c > 30.0 {
+                log::warn!("Config: invalid india_gdd_base_temp {}, resetting to 10.0", self.india_gdd_base_temp_c);
+                self.india_gdd_base_temp_c = GDD_BASE_TEMP_RICE_INDIA;
+            }
+        }
     }
 }
 
@@ -445,6 +527,12 @@ impl Default for RuntimeConfig {
             panel_tilt_deg: 30.0,
             #[cfg(feature = "solar")]
             panel_azimuth_deg: 180.0,
+            #[cfg(feature = "india")]
+            india_region: crate::industry::india::IndiaRegion::Plains,
+            #[cfg(feature = "india")]
+            india_gdd_base_temp_c: GDD_BASE_TEMP_RICE_INDIA,
+            #[cfg(feature = "india")]
+            india_crop_type: heapless::String::new(),
         }
     }
 }

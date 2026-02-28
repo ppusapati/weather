@@ -3,12 +3,15 @@
 /// Enable via Cargo features:
 /// - `agriculture` — Soil monitoring, ET calculation, GDD tracking, frost alerts
 /// - `solar` — Irradiance analytics, panel performance, yield estimation
-/// - `all-industries` — Both agriculture and solar
+/// - `india` — Monsoon tracking, IMD heat wave alerts, NAQI air quality, cyclone detection
+/// - `all-industries` — Agriculture, solar, and India modules
 
 #[cfg(feature = "agriculture")]
 pub mod agriculture;
 #[cfg(feature = "solar")]
 pub mod solar;
+#[cfg(feature = "india")]
+pub mod india;
 
 use serde::{Deserialize, Serialize};
 
