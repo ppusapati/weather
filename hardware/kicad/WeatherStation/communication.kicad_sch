@@ -1,0 +1,1810 @@
+(kicad_sch
+  (version 20231120)
+  (generator "eeschema")
+  (generator_version "7.0")
+  (uuid "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+  (paper "A4")
+  (title_block
+    (title "Weather Station - Communication Interface")
+    (date "2026-02-28")
+    (rev "1.0")
+    (comment 1 "ESP32-S3 LoRa, UART Debug, USB-C, WiFi/BLE Antenna")
+    (comment 2 "Sub-sheet: communication.kicad_sch")
+  )
+
+  (lib_symbols
+
+    (symbol "WeatherStation:SX1276"
+      (pin_names (offset 1.016))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "U"
+        (at 0 16.51 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Value" "SX1276"
+        (at 0 -16.51 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" "Package_DFN_QFN:QFN-28-1EP_5x5mm_P0.5mm_EP3.1x3.1mm"
+        (at 0 -19.05 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" "https://semtech.my.salesforce.com/sfc/p/#E0000000JelG/a/2R0000001Rbr/6EfVZUorrpoKFfvaF_Fkpgp5kWD8jyKExOgbNlXkstY"
+        (at 0 -21.59 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "137 MHz to 1020 MHz Low Power Long Range Transceiver, QFN-28"
+        (at 0 -24.13 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "SX1276_0_1"
+        (rectangle
+          (start -10.16 15.24)
+          (end 10.16 -15.24)
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+      )
+      (symbol "SX1276_1_1"
+        (pin input line (at -12.7 12.7 0) (length 2.54)
+          (name "MOSI" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin output line (at -12.7 10.16 0) (length 2.54)
+          (name "MISO" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin input line (at -12.7 7.62 0) (length 2.54)
+          (name "SCK" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+        (pin input line (at -12.7 5.08 0) (length 2.54)
+          (name "NSS" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
+        )
+        (pin input line (at -12.7 2.54 0) (length 2.54)
+          (name "NRESET" (effects (font (size 1.27 1.27))))
+          (number "5" (effects (font (size 1.27 1.27))))
+        )
+        (pin output line (at -12.7 0 0) (length 2.54)
+          (name "DIO0" (effects (font (size 1.27 1.27))))
+          (number "6" (effects (font (size 1.27 1.27))))
+        )
+        (pin output line (at -12.7 -2.54 0) (length 2.54)
+          (name "DIO1" (effects (font (size 1.27 1.27))))
+          (number "7" (effects (font (size 1.27 1.27))))
+        )
+        (pin output line (at -12.7 -5.08 0) (length 2.54)
+          (name "DIO2" (effects (font (size 1.27 1.27))))
+          (number "8" (effects (font (size 1.27 1.27))))
+        )
+        (pin power_in line (at 5.08 17.78 270) (length 2.54)
+          (name "VCC" (effects (font (size 1.27 1.27))))
+          (number "9" (effects (font (size 1.27 1.27))))
+        )
+        (pin power_in line (at 5.08 -17.78 90) (length 2.54)
+          (name "GND" (effects (font (size 1.27 1.27))))
+          (number "10" (effects (font (size 1.27 1.27))))
+        )
+        (pin output line (at 12.7 12.7 180) (length 2.54)
+          (name "RFO_HF" (effects (font (size 1.27 1.27))))
+          (number "11" (effects (font (size 1.27 1.27))))
+        )
+        (pin input line (at 12.7 10.16 180) (length 2.54)
+          (name "RFI_HF" (effects (font (size 1.27 1.27))))
+          (number "12" (effects (font (size 1.27 1.27))))
+        )
+        (pin output line (at 12.7 5.08 180) (length 2.54)
+          (name "RXTX" (effects (font (size 1.27 1.27))))
+          (number "13" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 12.7 0 180) (length 2.54)
+          (name "XTA" (effects (font (size 1.27 1.27))))
+          (number "14" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 12.7 -2.54 180) (length 2.54)
+          (name "XTB" (effects (font (size 1.27 1.27))))
+          (number "15" (effects (font (size 1.27 1.27))))
+        )
+        (pin power_in line (at 0 -17.78 90) (length 2.54)
+          (name "GND_PAD" (effects (font (size 1.27 1.27))))
+          (number "29" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "WeatherStation:SMA_Edge_Mount"
+      (pin_names (offset 1.016))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 3.81 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Value" "SMA_Edge_Mount"
+        (at 0 -3.81 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" "Connector_Coaxial:SMA_Amphenol_132289_EdgeMount"
+        (at 0 -6.35 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "SMA Female Edge-Mount Coaxial Connector, 50 Ohm"
+        (at 0 -8.89 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "SMA_Edge_Mount_0_1"
+        (arc
+          (start -1.778 -0.508)
+          (mid 0 -2.032)
+          (end 1.778 -0.508)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (arc
+          (start -1.778 0.508)
+          (mid 0 2.032)
+          (end 1.778 0.508)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.778 -0.508) (xy -1.778 0.508))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy 1.778 -0.508) (xy 1.778 0.508))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "SMA_Edge_Mount_1_1"
+        (pin passive line (at -5.08 0 0) (length 2.54)
+          (name "Signal" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 0 -5.08 90) (length 2.54)
+          (name "GND" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "WeatherStation:Conn_01x04_Pin"
+      (pin_names (offset 1.016))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 6.35 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Value" "Conn_01x04_Pin"
+        (at 0 -6.35 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+        (at 0 -8.89 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "4-pin 2.54mm pin header, DEBUG UART"
+        (at 0 -11.43 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "Conn_01x04_Pin_0_1"
+        (rectangle
+          (start -1.27 5.08)
+          (end 1.27 -5.08)
+          (stroke (width 0.254) (type default))
+          (fill (type background))
+        )
+      )
+      (symbol "Conn_01x04_Pin_1_1"
+        (pin passive line (at -3.81 3.81 0) (length 2.54)
+          (name "Pin_1" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at -3.81 1.27 0) (length 2.54)
+          (name "Pin_2" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at -3.81 -1.27 0) (length 2.54)
+          (name "Pin_3" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at -3.81 -3.81 0) (length 2.54)
+          (name "Pin_4" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "Device:C"
+      (pin_names (offset 0.254))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "C"
+        (at 0.635 2.54 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "C"
+        (at 0.635 -2.54 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" ""
+        (at 0.9652 -3.81 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" "~"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "Unpolarized capacitor"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "C_0_1"
+        (polyline
+          (pts (xy -2.032 -0.762) (xy 2.032 -0.762))
+          (stroke (width 0.508) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -2.032 0.762) (xy 2.032 0.762))
+          (stroke (width 0.508) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "C_1_1"
+        (pin passive line (at 0 3.81 270) (length 2.794)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 0 -3.81 90) (length 2.794)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "Device:C_Polarized"
+      (pin_names (offset 0.254))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "C"
+        (at 0.635 2.54 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "C_Polarized"
+        (at 0.635 -2.54 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" ""
+        (at 0.9652 -3.81 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" "~"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "Polarized capacitor"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "C_Polarized_0_1"
+        (polyline
+          (pts (xy -2.032 -0.762) (xy 2.032 -0.762))
+          (stroke (width 0.508) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -2.032 0.762) (xy 2.032 0.762))
+          (stroke (width 0.508) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.524 1.524) (xy -0.508 1.524))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy -1.016 2.032) (xy -1.016 1.016))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "C_Polarized_1_1"
+        (pin passive line (at 0 3.81 270) (length 2.794)
+          (name "+" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 0 -3.81 90) (length 2.794)
+          (name "-" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "Device:R"
+      (pin_names (offset 0))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "R"
+        (at 2.032 0 90)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Value" "R"
+        (at 0 0 90)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" ""
+        (at -1.778 0 90)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" "~"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "Resistor"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "R_0_1"
+        (rectangle
+          (start -1.016 -2.54)
+          (end 1.016 2.54)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "R_1_1"
+        (pin passive line (at 0 3.81 270) (length 1.27)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 0 -3.81 90) (length 1.27)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "Device:L"
+      (pin_names (offset 1.016))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "L"
+        (at -1.016 0 90)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Value" "L"
+        (at 1.524 0 90)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" "~"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "Inductor"
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "L_0_1"
+        (arc
+          (start 0 -2.54)
+          (mid 0.635 -1.905)
+          (end 0 -1.27)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (arc
+          (start 0 -1.27)
+          (mid 0.635 -0.635)
+          (end 0 0)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (arc
+          (start 0 0)
+          (mid 0.635 0.635)
+          (end 0 1.27)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (arc
+          (start 0 1.27)
+          (mid 0.635 1.905)
+          (end 0 2.54)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "L_1_1"
+        (pin passive line (at 0 3.81 270) (length 1.27)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 0 -3.81 90) (length 1.27)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "power:+3V3"
+      (power)
+      (pin_names (offset 0))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "#PWR"
+        (at 0 -3.81 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Value" "+3V3"
+        (at 0 3.556 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "Power symbol creates a global label with name \"+3V3\""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "+3V3_0_1"
+        (polyline
+          (pts (xy -0.762 1.27) (xy 0 2.54))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy 0 0) (xy 0 2.54))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts (xy 0 2.54) (xy 0.762 1.27))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "+3V3_1_1"
+        (pin power_in line (at 0 0 90) (length 0) hide
+          (name "+3V3" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+
+    (symbol "power:GND"
+      (power)
+      (pin_names (offset 0))
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "#PWR"
+        (at 0 -6.35 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Value" "GND"
+        (at 0 -3.81 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Description" "Power symbol creates a global label with name \"GND\""
+        (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "GND_0_1"
+        (polyline
+          (pts (xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27))
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+      )
+      (symbol "GND_1_1"
+        (pin power_in line (at 0 0 270) (length 0) hide
+          (name "GND" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+  )
+
+  ;;; =======================================================================
+  ;;; HIERARCHICAL LABELS (interface to parent sheet)
+  ;;; =======================================================================
+
+  ;; SPI bus labels - left edge, LoRa section
+  (hierarchical_label "SPI_MOSI"
+    (shape input)
+    (at 19.05 46.99 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-spi-mosi-0001")
+  )
+  (hierarchical_label "SPI_MISO"
+    (shape output)
+    (at 19.05 49.53 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-spi-miso-0002")
+  )
+  (hierarchical_label "SPI_SCK"
+    (shape input)
+    (at 19.05 52.07 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-spi-sck-0003")
+  )
+  (hierarchical_label "LORA_CS"
+    (shape input)
+    (at 19.05 54.61 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-lora-cs-0004")
+  )
+  (hierarchical_label "LORA_RST"
+    (shape input)
+    (at 19.05 57.15 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-lora-rst-0005")
+  )
+  (hierarchical_label "LORA_DIO0"
+    (shape output)
+    (at 19.05 59.69 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-lora-dio0-0006")
+  )
+
+  ;; UART labels - right side
+  (hierarchical_label "UART_TX"
+    (shape output)
+    (at 167.64 46.99 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-uart-tx-0007")
+  )
+  (hierarchical_label "UART_RX"
+    (shape input)
+    (at 167.64 49.53 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-uart-rx-0008")
+  )
+
+  ;; USB labels - right side
+  (hierarchical_label "USB_DN"
+    (shape bidirectional)
+    (at 167.64 113.03 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-usb-dn-0009")
+  )
+  (hierarchical_label "USB_DP"
+    (shape bidirectional)
+    (at 167.64 115.57 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-usb-dp-0010")
+  )
+
+  ;; Power labels
+  (hierarchical_label "+3V3"
+    (shape input)
+    (at 19.05 30.48 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-3v3-0011")
+  )
+  (hierarchical_label "GND"
+    (shape input)
+    (at 19.05 33.02 180)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid "hl-gnd-0012")
+  )
+
+  ;;; =======================================================================
+  ;;; SECTION 1: LoRa Module SX1276 (U8) — Left Half
+  ;;; =======================================================================
+
+  ;; --- U8: SX1276 LoRa Transceiver ---
+  (symbol
+    (lib_id "WeatherStation:SX1276")
+    (at 63.5 55.88 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "u8-sx1276-lora-0101")
+    (property "Reference" "U8"
+      (at 63.5 36.83 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "SX1276"
+      (at 63.5 72.39 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Package_DFN_QFN:QFN-28-1EP_5x5mm_P0.5mm_EP3.1x3.1mm"
+      (at 63.5 74.93 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "https://semtech.my.salesforce.com/sfc/p/#E0000000JelG/a/2R0000001Rbr/6EfVZUorrpoKFfvaF_Fkpgp5kWD8jyKExOgbNlXkstY"
+      (at 63.5 77.47 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "u8-pin1-mosi")
+    )
+    (pin "2"
+      (uuid "u8-pin2-miso")
+    )
+    (pin "3"
+      (uuid "u8-pin3-sck")
+    )
+    (pin "4"
+      (uuid "u8-pin4-nss")
+    )
+    (pin "5"
+      (uuid "u8-pin5-nreset")
+    )
+    (pin "6"
+      (uuid "u8-pin6-dio0")
+    )
+    (pin "7"
+      (uuid "u8-pin7-dio1")
+    )
+    (pin "8"
+      (uuid "u8-pin8-dio2")
+    )
+    (pin "9"
+      (uuid "u8-pin9-vcc")
+    )
+    (pin "10"
+      (uuid "u8-pin10-gnd")
+    )
+    (pin "11"
+      (uuid "u8-pin11-rfo")
+    )
+    (pin "12"
+      (uuid "u8-pin12-rfi")
+    )
+    (pin "13"
+      (uuid "u8-pin13-rxtx")
+    )
+    (pin "14"
+      (uuid "u8-pin14-xta")
+    )
+    (pin "15"
+      (uuid "u8-pin15-xtb")
+    )
+    (pin "29"
+      (uuid "u8-pin29-gndpad")
+    )
+  )
+
+  ;; --- +3V3 power symbol for U8 VCC ---
+  (symbol
+    (lib_id "power:+3V3")
+    (at 68.58 35.56 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-u8-0102")
+    (property "Reference" "#PWR01"
+      (at 68.58 39.37 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 68.58 31.75 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-u8-pin1")
+    )
+  )
+
+  ;; --- GND power symbol for U8 GND ---
+  (symbol
+    (lib_id "power:GND")
+    (at 68.58 76.2 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-u8-0103")
+    (property "Reference" "#PWR02"
+      (at 68.58 82.55 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 68.58 80.01 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-u8-pin1")
+    )
+  )
+
+  ;; --- GND power symbol for U8 GND_PAD (exposed pad) ---
+  (symbol
+    (lib_id "power:GND")
+    (at 63.5 76.2 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-u8pad-0104")
+    (property "Reference" "#PWR03"
+      (at 63.5 82.55 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 63.5 80.01 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-u8pad-pin1")
+    )
+  )
+
+  ;; --- C10: 10uF decoupling capacitor for SX1276 ---
+  (symbol
+    (lib_id "Device:C_Polarized")
+    (at 78.74 38.1 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c10-10uf-decoup-0105")
+    (property "Reference" "C10"
+      (at 81.28 36.83 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "10uF"
+      (at 81.28 39.37 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+      (at 79.7052 41.91 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "c10-pin1-pos")
+    )
+    (pin "2"
+      (uuid "c10-pin2-neg")
+    )
+  )
+
+  ;; --- +3V3 for C10 ---
+  (symbol
+    (lib_id "power:+3V3")
+    (at 78.74 31.75 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-c10-0106")
+    (property "Reference" "#PWR04"
+      (at 78.74 35.56 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 78.74 27.94 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-c10-pin1")
+    )
+  )
+
+  ;; --- GND for C10 ---
+  (symbol
+    (lib_id "power:GND")
+    (at 78.74 44.45 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-c10-0107")
+    (property "Reference" "#PWR05"
+      (at 78.74 50.8 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 78.74 48.26 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-c10-pin1")
+    )
+  )
+
+  ;; --- C11: 100nF decoupling capacitor for SX1276 ---
+  (symbol
+    (lib_id "Device:C")
+    (at 88.9 38.1 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c11-100nf-decoup-0108")
+    (property "Reference" "C11"
+      (at 91.44 36.83 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "100nF"
+      (at 91.44 39.37 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+      (at 89.8652 41.91 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "c11-pin1")
+    )
+    (pin "2"
+      (uuid "c11-pin2")
+    )
+  )
+
+  ;; --- +3V3 for C11 ---
+  (symbol
+    (lib_id "power:+3V3")
+    (at 88.9 31.75 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-c11-0109")
+    (property "Reference" "#PWR06"
+      (at 88.9 35.56 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 88.9 27.94 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-c11-pin1")
+    )
+  )
+
+  ;; --- GND for C11 ---
+  (symbol
+    (lib_id "power:GND")
+    (at 88.9 44.45 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-c11-0110")
+    (property "Reference" "#PWR07"
+      (at 88.9 50.8 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 88.9 48.26 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-c11-pin1")
+    )
+  )
+
+  ;;; --- PI Matching Network (Series inductor L1 + Shunt caps C12, C13) ---
+
+  ;; L1: Series inductor for PI matching network (between SX1276 RFO_HF and antenna)
+  (symbol
+    (lib_id "Device:L")
+    (at 88.9 68.58 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "l1-match-series-0111")
+    (property "Reference" "L1"
+      (at 88.9 64.77 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "5.6nH"
+      (at 88.9 72.39 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Inductor_SMD:L_0402_1005Metric"
+      (at 88.9 68.58 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "l1-pin1")
+    )
+    (pin "2"
+      (uuid "l1-pin2")
+    )
+  )
+
+  ;; C12: Shunt cap on SX1276 side of PI network
+  (symbol
+    (lib_id "Device:C")
+    (at 82.55 76.2 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c12-pi-shunt1-0112")
+    (property "Reference" "C12"
+      (at 85.09 74.93 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "1.5pF"
+      (at 85.09 77.47 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+      (at 83.5152 80.01 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "c12-pin1")
+    )
+    (pin "2"
+      (uuid "c12-pin2")
+    )
+  )
+
+  ;; GND for C12
+  (symbol
+    (lib_id "power:GND")
+    (at 82.55 82.55 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-c12-0113")
+    (property "Reference" "#PWR08"
+      (at 82.55 88.9 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 82.55 86.36 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-c12-pin1")
+    )
+  )
+
+  ;; C13: Shunt cap on antenna side of PI network
+  (symbol
+    (lib_id "Device:C")
+    (at 95.25 76.2 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c13-pi-shunt2-0114")
+    (property "Reference" "C13"
+      (at 97.79 74.93 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "3.3pF"
+      (at 97.79 77.47 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+      (at 96.2152 80.01 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "c13-pin1")
+    )
+    (pin "2"
+      (uuid "c13-pin2")
+    )
+  )
+
+  ;; GND for C13
+  (symbol
+    (lib_id "power:GND")
+    (at 95.25 82.55 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-c13-0115")
+    (property "Reference" "#PWR09"
+      (at 95.25 88.9 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 95.25 86.36 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-c13-pin1")
+    )
+  )
+
+  ;;; --- J6: SMA Antenna Connector (Edge-Mount Female) ---
+  (symbol
+    (lib_id "WeatherStation:SMA_Edge_Mount")
+    (at 113.03 68.58 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "j6-sma-antenna-0116")
+    (property "Reference" "J6"
+      (at 113.03 62.23 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "SMA_Female_Edge"
+      (at 113.03 73.66 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Connector_Coaxial:SMA_Amphenol_132289_EdgeMount"
+      (at 113.03 74.93 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "j6-pin1-sig")
+    )
+    (pin "2"
+      (uuid "j6-pin2-gnd")
+    )
+  )
+
+  ;; GND for J6
+  (symbol
+    (lib_id "power:GND")
+    (at 113.03 76.2 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-j6-0117")
+    (property "Reference" "#PWR010"
+      (at 113.03 82.55 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 113.03 80.01 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-j6-pin1")
+    )
+  )
+
+  ;;; =======================================================================
+  ;;; SECTION 2: UART Debug Header (J7) — Right Half, Upper
+  ;;; =======================================================================
+
+  ;; --- R7: 100R series resistor on TX line ---
+  (symbol
+    (lib_id "Device:R")
+    (at 144.78 46.99 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "r7-100r-tx-0201")
+    (property "Reference" "R7"
+      (at 144.78 43.18 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "100R"
+      (at 144.78 46.99 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+      (at 144.78 48.7678 90)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "r7-pin1")
+    )
+    (pin "2"
+      (uuid "r7-pin2")
+    )
+  )
+
+  ;; --- R8: 100R series resistor on RX line ---
+  (symbol
+    (lib_id "Device:R")
+    (at 144.78 49.53 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "r8-100r-rx-0202")
+    (property "Reference" "R8"
+      (at 144.78 53.34 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "100R"
+      (at 144.78 49.53 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+      (at 144.78 51.3078 90)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "r8-pin1")
+    )
+    (pin "2"
+      (uuid "r8-pin2")
+    )
+  )
+
+  ;; --- J7: 4-pin Debug UART Header ---
+  (symbol
+    (lib_id "WeatherStation:Conn_01x04_Pin")
+    (at 160.02 52.07 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "j7-debug-uart-0203")
+    (property "Reference" "J7"
+      (at 160.02 43.18 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "DEBUG UART"
+      (at 160.02 60.96 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+      (at 160.02 60.96 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "j7-pin1-tx")
+    )
+    (pin "2"
+      (uuid "j7-pin2-rx")
+    )
+    (pin "3"
+      (uuid "j7-pin3-3v3")
+    )
+    (pin "4"
+      (uuid "j7-pin4-gnd")
+    )
+  )
+
+  ;; --- +3V3 for J7 pin 3 ---
+  (symbol
+    (lib_id "power:+3V3")
+    (at 152.4 48.26 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-j7-0204")
+    (property "Reference" "#PWR011"
+      (at 152.4 52.07 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 152.4 44.45 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-j7-pin1")
+    )
+  )
+
+  ;; --- GND for J7 pin 4 ---
+  (symbol
+    (lib_id "power:GND")
+    (at 152.4 58.42 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-j7-0205")
+    (property "Reference" "#PWR012"
+      (at 152.4 64.77 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 152.4 62.23 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-j7-pin1")
+    )
+  )
+
+  ;;; =======================================================================
+  ;;; SECTION 3: USB-C Data Lines — Right Half, Lower
+  ;;; =======================================================================
+  ;; (USB-C data lines shared with power sheet; only hierarchical labels and notes here)
+
+  ;;; =======================================================================
+  ;;; WIRES
+  ;;; =======================================================================
+
+  ;; --- SPI Bus wires from hierarchical labels to U8 ---
+
+  ;; SPI_MOSI -> U8 MOSI (GPIO10)
+  (wire
+    (pts (xy 19.05 46.99) (xy 50.8 46.99))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-mosi-0301")
+  )
+  (wire
+    (pts (xy 50.8 46.99) (xy 50.8 43.18))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-mosi-0302")
+  )
+
+  ;; SPI_MISO -> U8 MISO (GPIO11)
+  (wire
+    (pts (xy 19.05 49.53) (xy 48.26 49.53))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-miso-0303")
+  )
+  (wire
+    (pts (xy 48.26 49.53) (xy 48.26 45.72))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-miso-0304")
+  )
+  (wire
+    (pts (xy 48.26 45.72) (xy 50.8 45.72))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-miso-0305")
+  )
+
+  ;; SPI_SCK -> U8 SCK (GPIO12)
+  (wire
+    (pts (xy 19.05 52.07) (xy 45.72 52.07))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-sck-0306")
+  )
+  (wire
+    (pts (xy 45.72 52.07) (xy 45.72 48.26))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-sck-0307")
+  )
+  (wire
+    (pts (xy 45.72 48.26) (xy 50.8 48.26))
+    (stroke (width 0) (type default))
+    (uuid "wire-spi-sck-0308")
+  )
+
+  ;; LORA_CS -> U8 NSS (GPIO13)
+  (wire
+    (pts (xy 19.05 54.61) (xy 43.18 54.61))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-cs-0309")
+  )
+  (wire
+    (pts (xy 43.18 54.61) (xy 43.18 50.8))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-cs-0310")
+  )
+  (wire
+    (pts (xy 43.18 50.8) (xy 50.8 50.8))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-cs-0311")
+  )
+
+  ;; LORA_RST -> U8 NRESET (GPIO14)
+  (wire
+    (pts (xy 19.05 57.15) (xy 40.64 57.15))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-rst-0312")
+  )
+  (wire
+    (pts (xy 40.64 57.15) (xy 40.64 53.34))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-rst-0313")
+  )
+  (wire
+    (pts (xy 40.64 53.34) (xy 50.8 53.34))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-rst-0314")
+  )
+
+  ;; LORA_DIO0 -> U8 DIO0 (GPIO15)
+  (wire
+    (pts (xy 19.05 59.69) (xy 38.1 59.69))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-dio0-0315")
+  )
+  (wire
+    (pts (xy 38.1 59.69) (xy 38.1 55.88))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-dio0-0316")
+  )
+  (wire
+    (pts (xy 38.1 55.88) (xy 50.8 55.88))
+    (stroke (width 0) (type default))
+    (uuid "wire-lora-dio0-0317")
+  )
+
+  ;; U8 VCC to +3V3 power symbol
+  (wire
+    (pts (xy 68.58 38.1) (xy 68.58 35.56))
+    (stroke (width 0) (type default))
+    (uuid "wire-u8-vcc-0318")
+  )
+
+  ;; U8 GND to GND power symbol
+  (wire
+    (pts (xy 68.58 73.66) (xy 68.58 76.2))
+    (stroke (width 0) (type default))
+    (uuid "wire-u8-gnd-0319")
+  )
+
+  ;; U8 GND_PAD to GND power symbol
+  (wire
+    (pts (xy 63.5 73.66) (xy 63.5 76.2))
+    (stroke (width 0) (type default))
+    (uuid "wire-u8-gndpad-0320")
+  )
+
+  ;; +3V3 to C10 top
+  (wire
+    (pts (xy 78.74 31.75) (xy 78.74 34.29))
+    (stroke (width 0) (type default))
+    (uuid "wire-c10-3v3-0321")
+  )
+
+  ;; C10 bottom to GND
+  (wire
+    (pts (xy 78.74 41.91) (xy 78.74 44.45))
+    (stroke (width 0) (type default))
+    (uuid "wire-c10-gnd-0322")
+  )
+
+  ;; +3V3 to C11 top
+  (wire
+    (pts (xy 88.9 31.75) (xy 88.9 34.29))
+    (stroke (width 0) (type default))
+    (uuid "wire-c11-3v3-0323")
+  )
+
+  ;; C11 bottom to GND
+  (wire
+    (pts (xy 88.9 41.91) (xy 88.9 44.45))
+    (stroke (width 0) (type default))
+    (uuid "wire-c11-gnd-0324")
+  )
+
+  ;; --- PI Matching Network Wires ---
+
+  ;; U8 RFO_HF output to C12 junction / L1 input
+  (wire
+    (pts (xy 76.2 68.58) (xy 82.55 68.58))
+    (stroke (width 0) (type default))
+    (uuid "wire-rfo-to-pi-0325")
+  )
+
+  ;; C12 top to PI junction (RFO side)
+  (wire
+    (pts (xy 82.55 68.58) (xy 82.55 72.39))
+    (stroke (width 0) (type default))
+    (uuid "wire-c12-junction-0326")
+  )
+
+  ;; L1 input from C12 junction
+  (wire
+    (pts (xy 82.55 68.58) (xy 85.09 68.58))
+    (stroke (width 0) (type default))
+    (uuid "wire-l1-input-0327")
+  )
+
+  ;; C12 bottom to GND
+  (wire
+    (pts (xy 82.55 80.01) (xy 82.55 82.55))
+    (stroke (width 0) (type default))
+    (uuid "wire-c12-gnd-0328")
+  )
+
+  ;; L1 output to C13 junction / antenna trace
+  (wire
+    (pts (xy 92.71 68.58) (xy 95.25 68.58))
+    (stroke (width 0) (type default))
+    (uuid "wire-l1-output-0329")
+  )
+
+  ;; C13 top to PI junction (antenna side)
+  (wire
+    (pts (xy 95.25 68.58) (xy 95.25 72.39))
+    (stroke (width 0) (type default))
+    (uuid "wire-c13-junction-0330")
+  )
+
+  ;; C13 bottom to GND
+  (wire
+    (pts (xy 95.25 80.01) (xy 95.25 82.55))
+    (stroke (width 0) (type default))
+    (uuid "wire-c13-gnd-0331")
+  )
+
+  ;; PI network output to SMA connector J6 (50-ohm matched trace)
+  (wire
+    (pts (xy 95.25 68.58) (xy 107.95 68.58))
+    (stroke (width 0) (type default))
+    (uuid "wire-pi-to-sma-0332")
+  )
+
+  ;; J6 GND
+  (wire
+    (pts (xy 113.03 73.66) (xy 113.03 76.2))
+    (stroke (width 0) (type default))
+    (uuid "wire-j6-gnd-0333")
+  )
+
+  ;; --- UART Debug Header Wires ---
+
+  ;; Hierarchical UART_TX -> R7 -> J7 Pin 1 (TX)
+  (wire
+    (pts (xy 167.64 46.99) (xy 148.59 46.99))
+    (stroke (width 0) (type default))
+    (uuid "wire-uart-tx-to-r7-0334")
+  )
+  (wire
+    (pts (xy 140.97 46.99) (xy 135.89 46.99))
+    (stroke (width 0) (type default))
+    (uuid "wire-r7-to-label-0335")
+  )
+  ;; R7 output to J7 pin 1
+  (wire
+    (pts (xy 148.59 46.99) (xy 148.59 48.26))
+    (stroke (width 0) (type default))
+    (uuid "wire-r7-out-vert-0336")
+  )
+  (wire
+    (pts (xy 148.59 48.26) (xy 156.21 48.26))
+    (stroke (width 0) (type default))
+    (uuid "wire-r7-out-to-j7-0337")
+  )
+
+  ;; Hierarchical UART_RX -> R8 -> J7 Pin 2 (RX)
+  (wire
+    (pts (xy 167.64 49.53) (xy 148.59 49.53))
+    (stroke (width 0) (type default))
+    (uuid "wire-uart-rx-to-r8-0338")
+  )
+  (wire
+    (pts (xy 140.97 49.53) (xy 135.89 49.53))
+    (stroke (width 0) (type default))
+    (uuid "wire-r8-to-label-0339")
+  )
+  ;; R8 output to J7 pin 2
+  (wire
+    (pts (xy 148.59 49.53) (xy 148.59 50.8))
+    (stroke (width 0) (type default))
+    (uuid "wire-r8-out-vert-0340")
+  )
+  (wire
+    (pts (xy 148.59 50.8) (xy 156.21 50.8))
+    (stroke (width 0) (type default))
+    (uuid "wire-r8-out-to-j7-0341")
+  )
+
+  ;; J7 Pin 3 (3V3) to +3V3
+  (wire
+    (pts (xy 156.21 50.8) (xy 152.4 50.8))
+    (stroke (width 0) (type default))
+    (uuid "wire-j7-3v3-0342")
+  )
+  (wire
+    (pts (xy 152.4 50.8) (xy 152.4 48.26))
+    (stroke (width 0) (type default))
+    (uuid "wire-j7-3v3-up-0343")
+  )
+
+  ;; J7 Pin 4 (GND) to GND
+  (wire
+    (pts (xy 156.21 55.88) (xy 152.4 55.88))
+    (stroke (width 0) (type default))
+    (uuid "wire-j7-gnd-0344")
+  )
+  (wire
+    (pts (xy 152.4 55.88) (xy 152.4 58.42))
+    (stroke (width 0) (type default))
+    (uuid "wire-j7-gnd-down-0345")
+  )
+
+  ;; --- USB-C Data Lines (notes only, shared with power sheet) ---
+  ;; USB_DN hierarchical label stands alone with notes
+  ;; USB_DP hierarchical label stands alone with notes
+
+  ;;; =======================================================================
+  ;;; NET LABELS (for GPIO assignments and signal names)
+  ;;; =======================================================================
+
+  (net_label "GPIO10_SPI_MOSI"
+    (at 27.94 46.99 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio10-0401")
+  )
+  (net_label "GPIO11_SPI_MISO"
+    (at 27.94 49.53 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio11-0402")
+  )
+  (net_label "GPIO12_SPI_SCK"
+    (at 27.94 52.07 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio12-0403")
+  )
+  (net_label "GPIO13_LORA_CS"
+    (at 27.94 54.61 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio13-0404")
+  )
+  (net_label "GPIO14_LORA_RST"
+    (at 27.94 57.15 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio14-0405")
+  )
+  (net_label "GPIO15_LORA_DIO0"
+    (at 27.94 59.69 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio15-0406")
+  )
+
+  (net_label "GPIO43_UART_TX"
+    (at 135.89 46.99 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio43-0407")
+  )
+  (net_label "GPIO44_UART_RX"
+    (at 135.89 49.53 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-gpio44-0408")
+  )
+
+  (net_label "GPIO19_USB_DN"
+    (at 160.02 113.03 180)
+    (effects (font (size 1.016 1.016)) (justify right))
+    (uuid "netlabel-gpio19-0409")
+  )
+  (net_label "GPIO20_USB_DP"
+    (at 160.02 115.57 180)
+    (effects (font (size 1.016 1.016)) (justify right))
+    (uuid "netlabel-gpio20-0410")
+  )
+
+  (net_label "RXTX_SW"
+    (at 76.2 60.96 0)
+    (effects (font (size 1.016 1.016)) (justify left))
+    (uuid "netlabel-rxtx-0411")
+  )
+
+  ;;; =======================================================================
+  ;;; TEXT NOTES & ANNOTATIONS
+  ;;; =======================================================================
+
+  ;; Section title: LoRa Module
+  (text "LoRa SX1276 Transceiver Module"
+    (at 50.8 24.13 0)
+    (effects (font (size 2.54 2.54) bold) (justify left))
+    (uuid "text-lora-title-0501")
+  )
+
+  ;; Section title: UART Debug
+  (text "UART Debug Header"
+    (at 134.62 24.13 0)
+    (effects (font (size 2.54 2.54) bold) (justify left))
+    (uuid "text-uart-title-0502")
+  )
+
+  ;; Section title: USB-C Data Lines
+  (text "USB-C Data Lines"
+    (at 134.62 100.33 0)
+    (effects (font (size 2.54 2.54) bold) (justify left))
+    (uuid "text-usb-title-0503")
+  )
+
+  ;; Section title: WiFi/BLE Antenna
+  (text "WiFi/BLE Antenna (ESP32-S3-WROOM-1)"
+    (at 134.62 132.08 0)
+    (effects (font (size 2.54 2.54) bold) (justify left))
+    (uuid "text-wifi-title-0504")
+  )
+
+  ;; SX1276 SPI interface note
+  (text "SPI Interface:\nMOSI = GPIO10\nMISO = GPIO11\nSCK  = GPIO12\nNSS  = GPIO13 (Chip Select)\nReset = GPIO14\nDIO0 (IRQ) = GPIO15"
+    (at 19.05 68.58 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-spi-pinout-0505")
+  )
+
+  ;; Decoupling note
+  (text "Decoupling: 10uF + 100nF\nPlace close to VCC pin"
+    (at 78.74 26.67 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-decoupling-0506")
+  )
+
+  ;; 50-ohm impedance matching note
+  (text "50-ohm impedance matched trace\nPI matching network:\nL1 series + C12/C13 shunt\nTune for 868/915 MHz band"
+    (at 82.55 88.9 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-impedance-0507")
+  )
+
+  ;; SMA connector GND stitching note
+  (text "NOTE: Place GND stitching vias\naround SMA connector footprint\nfor proper RF ground return path"
+    (at 105.41 82.55 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-gnd-stitching-0508")
+  )
+
+  ;; RXTX switch pin note
+  (text "RXTX pin controls\nexternal RX/TX switch\n(active high during TX)"
+    (at 78.74 58.42 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-rxtx-0509")
+  )
+
+  ;; UART debug header note
+  (text "DEBUG UART\n4-pin 2.54mm header\nPin 1: TX (GPIO43)\nPin 2: RX (GPIO44)\nPin 3: +3V3\nPin 4: GND\n\n100R series resistors on TX/RX\nfor ESD/short-circuit protection"
+    (at 134.62 30.48 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-uart-debug-0510")
+  )
+
+  ;; USB-C data lines note
+  (text "USB D- = GPIO19\nUSB D+ = GPIO20\n\nDirectly routed to ESP32-S3\nUSB-OTG peripheral\n\n90-ohm differential impedance\npair routing required.\nKeep traces equal length.\nShared with power sub-sheet."
+    (at 134.62 105.41 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-usb-notes-0511")
+  )
+
+  ;; WiFi/BLE Antenna keep-out zone note
+  (text "Using ESP32-S3-WROOM-1 onboard PCB antenna.\n\nANTENNA KEEP-OUT ZONE: 10mm x 10mm\nNo copper pour, traces, or components\nin antenna keep-out zone.\n\nKeep-out extends beyond module edge\non PCB. See module datasheet for\nexact dimensions and placement."
+    (at 134.62 139.7 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-wifi-keepout-0512")
+  )
+
+  ;; Keep-out zone box (visual indicator using text box rectangle)
+  (text "KEEP-OUT ZONE\n10mm x 10mm\nNo copper/components\nin antenna keep-out zone"
+    (at 170.18 139.7 0)
+    (effects (font (size 1.524 1.524) bold) (justify left))
+    (uuid "text-keepout-box-0513")
+  )
+
+  ;; RXTX wire stub from U8 pin 13
+  (wire
+    (pts (xy 76.2 60.96) (xy 82.55 60.96))
+    (stroke (width 0) (type default))
+    (uuid "wire-rxtx-stub-0350")
+  )
+
+  ;; USB_DN wire from hierarchical label
+  (wire
+    (pts (xy 167.64 113.03) (xy 160.02 113.03))
+    (stroke (width 0) (type default))
+    (uuid "wire-usb-dn-0351")
+  )
+
+  ;; USB_DP wire from hierarchical label
+  (wire
+    (pts (xy 167.64 115.57) (xy 160.02 115.57))
+    (stroke (width 0) (type default))
+    (uuid "wire-usb-dp-0352")
+  )
+
+  ;;; =======================================================================
+  ;;; JUNCTIONS (where wires meet)
+  ;;; =======================================================================
+
+  (junction
+    (at 82.55 68.58)
+    (diameter 0)
+    (color 0 0 0 0)
+    (uuid "junc-pi-rfo-0601")
+  )
+  (junction
+    (at 95.25 68.58)
+    (diameter 0)
+    (color 0 0 0 0)
+    (uuid "junc-pi-ant-0602")
+  )
+  (junction
+    (at 148.59 46.99)
+    (diameter 0)
+    (color 0 0 0 0)
+    (uuid "junc-uart-tx-0603")
+  )
+  (junction
+    (at 148.59 49.53)
+    (diameter 0)
+    (color 0 0 0 0)
+    (uuid "junc-uart-rx-0604")
+  )
+
+  ;;; =======================================================================
+  ;;; NO-CONNECT FLAGS (unused DIO pins)
+  ;;; =======================================================================
+
+  (no_connect
+    (at 50.8 58.42)
+    (uuid "nc-dio1-0701")
+  )
+  (no_connect
+    (at 50.8 60.96)
+    (uuid "nc-dio2-0702")
+  )
+
+  ;;; =======================================================================
+  ;;; GRAPHICAL ELEMENTS — Section Dividers
+  ;;; =======================================================================
+
+  ;; Vertical divider between left (LoRa) and right (UART/USB) sections
+  (polyline
+    (pts (xy 127 20.32) (xy 127 170.18))
+    (stroke (width 0.254) (type dash))
+    (uuid "divider-vert-0801")
+  )
+
+  ;; Horizontal divider between UART and USB sections (right half)
+  (polyline
+    (pts (xy 127 96.52) (xy 200.66 96.52))
+    (stroke (width 0.254) (type dash))
+    (uuid "divider-horiz-uart-usb-0802")
+  )
+
+  ;; Horizontal divider between USB and WiFi/BLE sections (right half)
+  (polyline
+    (pts (xy 127 128.27) (xy 200.66 128.27))
+    (stroke (width 0.254) (type dash))
+    (uuid "divider-horiz-usb-wifi-0803")
+  )
+
+  ;; Keep-out zone dashed rectangle (visual)
+  (polyline
+    (pts (xy 167.64 137.16) (xy 193.04 137.16) (xy 193.04 162.56) (xy 167.64 162.56) (xy 167.64 137.16))
+    (stroke (width 0.508) (type dash_dot))
+    (uuid "keepout-rect-0804")
+  )
+)
