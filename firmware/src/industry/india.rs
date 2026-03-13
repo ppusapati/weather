@@ -148,6 +148,9 @@ pub struct IndiaAnalytics {
     // Cyclone tracking
     last_cyclone_risk: CycloneRisk,
 
+    // AQI alert deduplication
+    last_aqi_severe: bool,
+
     // GDD
     gdd_accumulated: f32,
     today_temp_min_c: f32,
@@ -186,6 +189,7 @@ impl IndiaAnalytics {
             pressure_idx: 0,
             pressure_count: 0,
             last_cyclone_risk: CycloneRisk::None,
+            last_aqi_severe: false,
             gdd_accumulated: 0.0,
             today_temp_min_c: f32::MAX,
             today_temp_max_c: f32::MIN,
@@ -209,6 +213,14 @@ impl IndiaAnalytics {
         uptime_ms: u64,
     ) -> IndiaReading {
         let mut reading = IndiaReading::default();
+
+        // Sanitize inputs: reject NaN/infinity values
+        let air_temp_c = air_temp_c.filter(|v| v.is_finite());
+        let humidity_pct = humidity_pct.filter(|v| v.is_finite());
+        let wind_speed_kmh = wind_speed_kmh.filter(|v| v.is_finite());
+        let pressure_hpa = pressure_hpa.filter(|v| v.is_finite());
+        let rain_rate_mm_hr = rain_rate_mm_hr.filter(|v| v.is_finite() && *v >= 0.0);
+        let pm25_ugm3 = pm25_ugm3.filter(|v| v.is_finite() && *v >= 0.0);
 
         // Season classification
         reading.season = Self::classify_season(month);
@@ -337,8 +349,9 @@ impl IndiaAnalytics {
             }
         }
 
-        // AQI severe alert
-        if reading.aqi_category == AqiCategory::Severe {
+        // AQI severe alert (on state change only — prevents alert flooding)
+        let aqi_severe_now = reading.aqi_category == AqiCategory::Severe;
+        if aqi_severe_now && !self.last_aqi_severe {
             let _ = alerts.push(IndustryAlert {
                 severity: AlertSeverity::Critical,
                 category: heapless::String::try_from("air_quality").unwrap_or_default(),
@@ -349,6 +362,7 @@ impl IndiaAnalytics {
                 timestamp_ms,
             });
         }
+        self.last_aqi_severe = aqi_severe_now;
 
         // Monsoon onset detection
         if reading.monsoon_phase == MonsoonPhase::Active
@@ -504,7 +518,7 @@ impl IndiaAnalytics {
 
         // Steadman apparent temperature
         let at = t + 0.33 * (e * 10.0) - 0.7 * wind_ms - 4.0;
-        Some(at)
+        if at.is_finite() { Some(at) } else { None }
     }
 
     /// Compute Thom's discomfort index.
@@ -516,11 +530,14 @@ impl IndiaAnalytics {
         let t = temp_c?;
         let rh = humidity_pct?;
         let di = t - 0.55 * (1.0 - 0.01 * rh) * (t - 14.5);
-        Some(di)
+        if di.is_finite() { Some(di) } else { None }
     }
 
     /// Record pressure reading into circular history buffer.
     fn record_pressure(&mut self, pressure_hpa: f32) {
+        if !pressure_hpa.is_finite() {
+            return;
+        }
         self.pressure_history[self.pressure_idx] = pressure_hpa;
         self.pressure_idx = (self.pressure_idx + 1) % self.pressure_history.len();
         if self.pressure_count < self.pressure_history.len() as u16 {

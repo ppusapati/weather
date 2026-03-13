@@ -4,6 +4,28 @@
 /// calibration constants, and validation ranges are defined here
 /// as named constants. Runtime-configurable values are stored in
 /// [`RuntimeConfig`] and persisted in NVS flash.
+///
+/// # Industrial-Grade Component Selection
+///
+/// All components are selected for the industrial temperature range
+/// (-40°C to +85°C) and harsh outdoor environments:
+///
+/// | Component | Industrial Part | Temp Range | Notes |
+/// |-----------|----------------|------------|-------|
+/// | MCU | ESP32-S3-WROOM-1-N16R8**I** | -40°C to +85°C | Industrial suffix "I" |
+/// | Temp/Hum/Pressure | BME280 (Bosch) | -40°C to +85°C | Automotive-qualified available |
+/// | Wind Direction | AS5600-ASOM | -40°C to +85°C | Industrial magnetic encoder |
+/// | UV Sensor | SI1145-A10-GMR | -40°C to +85°C | Industrial UV/ALS/proximity |
+/// | Light Sensor | BH1750FVI-TR | -40°C to +85°C | Industrial ALS |
+/// | PM2.5 Sensor | GP2Y1014AU0F | -10°C to +65°C | Upgraded from GP2Y1010AU0F |
+/// | LoRa Transceiver | SX1276 (Semtech) | -40°C to +85°C | Industrial ISM radio |
+/// | Soil Temp | DS18B20**Z** | -55°C to +125°C | Industrial 1-Wire |
+/// | Soil Moisture | Capacitive (SEN0193) | -40°C to +85°C | No corrosion |
+/// | Voltage Regulator | TPS63020 | -40°C to +85°C | Wide input buck-boost |
+/// | TVS/ESD Protection | TPD4E05U06 | -40°C to +125°C | On all external lines |
+/// | Conformal Coating | Dow Corning 1-2577 | -65°C to +200°C | Moisture/salt spray |
+///
+/// IP65/IP67-rated enclosure with UV-stabilized polycarbonate recommended.
 
 use serde::{Deserialize, Serialize};
 
@@ -363,6 +385,26 @@ pub const GDD_BASE_TEMP_JUTE: f32 = 15.0;
 /// EMA alpha for PM2.5 sensor.
 #[cfg(feature = "india")]
 pub const EMA_ALPHA_PM25: f32 = 0.2;
+
+/// PM2.5 sensor warm-up time (ms). GP2Y1014AU0F requires ~10s stabilization.
+#[cfg(feature = "india")]
+pub const PM25_WARMUP_MS: u64 = 10_000;
+
+/// PM2.5 maximum valid reading (µg/m³). Above this indicates sensor fault.
+#[cfg(feature = "india")]
+pub const PM25_MAX_UGM3: f32 = 1000.0;
+
+/// PM2.5 LED pulse width (µs). GP2Y1014AU0F datasheet: 320 µs.
+#[cfg(feature = "india")]
+pub const PM25_LED_PULSE_US: u32 = 320;
+
+/// PM2.5 ADC sample delay within LED pulse (µs). Datasheet: 280 µs after LED on.
+#[cfg(feature = "india")]
+pub const PM25_SAMPLE_DELAY_US: u32 = 280;
+
+/// Number of ADC samples to average per PM2.5 reading (noise rejection).
+#[cfg(feature = "india")]
+pub const PM25_SAMPLE_COUNT: u8 = 10;
 
 // ---------- Firmware Info ----------
 

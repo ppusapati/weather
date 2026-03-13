@@ -511,10 +511,14 @@ fn init_sensors() -> SensorStatusMap {
         status.panel_temp = drivers::SensorStatus::Ok;
     }
 
-    // India sensors
+    // India sensors (industrial-grade GP2Y1014AU0F)
     #[cfg(feature = "india")]
     {
-        log::info!("Initializing PM2.5 sensor on GPIO {}...", config::PM25_SENSOR_ADC_PIN);
+        log::info!(
+            "Initializing PM2.5 sensor (GP2Y1014AU0F) on GPIO {} (warm-up: {}ms)...",
+            config::PM25_SENSOR_ADC_PIN,
+            config::PM25_WARMUP_MS
+        );
         status.pm25 = drivers::SensorStatus::Ok;
     }
 

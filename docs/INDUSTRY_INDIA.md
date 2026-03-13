@@ -26,11 +26,44 @@ cargo build --release --features india
 | **IST timezone** | UTC+05:30 day boundary for daily aggregations |
 | **IN865 LoRa band** | 865–867 MHz ISM band compliance for India |
 
-## Additional Sensors
+## Industrial-Grade Component Specifications
 
-| # | Component | Part Number | Interface | Purpose |
-|---|-----------|-------------|-----------|---------|
-| 1 | PM2.5 particulate sensor | GP2Y1010AU0F | ADC (GPIO21) | Air quality monitoring |
+All components are selected for industrial temperature range (-40°C to +85°C)
+and harsh outdoor deployment with IP65+ enclosure, conformal coating, and TVS
+protection on all external I/O lines.
+
+### Base Station Components
+
+| # | Component | Industrial Part Number | Temp Range | Notes |
+|---|-----------|----------------------|------------|-------|
+| 1 | MCU | ESP32-S3-WROOM-1-N16R8**I** | -40°C to +85°C | Industrial "I" suffix |
+| 2 | Temp/Hum/Press | Bosch BME280 | -40°C to +85°C | Automotive-qualified avail. |
+| 3 | Wind Direction | AS5600-ASOM | -40°C to +85°C | Industrial magnetic encoder |
+| 4 | UV Sensor | SI1145-A10-GMR | -40°C to +85°C | UV/ALS/proximity |
+| 5 | Light Sensor | BH1750FVI-TR | -40°C to +85°C | Ambient light sensor |
+| 6 | LoRa Radio | Semtech SX1276 | -40°C to +85°C | ISM transceiver |
+| 7 | Voltage Regulator | TPS63020DSJR | -40°C to +85°C | Wide-input buck-boost |
+| 8 | TVS Protection | TPD4E05U06DQAR | -40°C to +125°C | All external I/O |
+| 9 | Conformal Coating | Dow Corning 1-2577 | -65°C to +200°C | Salt-spray resistant |
+
+### Enclosure & Environmental Protection
+
+| Specification | Value |
+|---------------|-------|
+| IP Rating | IP65 (minimum), IP67 recommended |
+| Material | UV-stabilized polycarbonate |
+| Mounting | Stainless steel 304 pole mount |
+| Cable Glands | IP68 rated, M12 connectors |
+| Lightning | MOV surge protector on antenna + power |
+| Grounding | Dedicated earth lug, bonded to mast |
+| Operating Temp | -40°C to +85°C (electronics) |
+| Humidity | 0–100% RH (conformal coated) |
+
+## Additional Sensors (India Extension)
+
+| # | Component | Part Number | Interface | Purpose | Temp Range |
+|---|-----------|-------------|-----------|---------|------------|
+| 1 | PM2.5 particulate sensor | GP2Y1014AU0F | ADC (GPIO21) | Air quality monitoring | -10°C to +65°C |
 
 ### Pin Mapping (India Extension)
 
@@ -50,7 +83,7 @@ ADC (Air Quality):
           ├──── 150Ω ────┐
           │               │
           │        ┌──────┴──────────┐
-          ├───────►│ GP2Y1010AU0F   │
+          ├───────►│ GP2Y1014AU0F   │
           │   VCC  │ PM2.5 Dust     │
           │        │ Sensor          │
    GPIO21 ◄───────┤ Vo (analog)     │
@@ -61,6 +94,20 @@ ADC (Air Quality):
           │
           ├──── 220µF cap to GND (LED pulse smoothing)
 ```
+
+### PM2.5 Driver — Industrial Features
+
+The PM2.5 driver implements production-grade signal acquisition:
+
+| Feature | Description |
+|---------|-------------|
+| **LED pulse timing** | 320 µs pulse, ADC sample at 280 µs per GP2Y1014AU0F datasheet |
+| **Multi-sample averaging** | 10 samples with trimmed-mean outlier rejection |
+| **Warm-up enforcement** | 10-second minimum after power-on before readings accepted |
+| **NaN/infinity guards** | All inputs and outputs validated for finite values |
+| **Fault detection** | 5 consecutive out-of-range readings triggers sensor error |
+| **EMA filtering** | Exponential moving average (α=0.2) for trend smoothing |
+| **Calibration API** | Runtime-adjustable baseline and sensitivity from NVS |
 
 ## Analytics Features
 
@@ -253,7 +300,7 @@ weather/{device_id}/alerts/industry    — Heat wave, cyclone, AQI, monsoon aler
 
 | Component | Active (mA) | Sleep (µA) |
 |-----------|------------|-----------|
-| PM2.5 sensor (GP2Y1010AU0F) | 20.0 | 0 (switched) |
+| PM2.5 sensor (GP2Y1014AU0F) | 20.0 | 0 (switched) |
 | **Subtotal** | **~20 mA** | **~0 µA** |
 
 Note: The PM2.5 sensor is power-switched and only activated during sampling
