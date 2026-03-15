@@ -19,6 +19,14 @@ pub mod wifi;
 #[cfg(feature = "stm32")]
 pub mod modbus_rtu;
 
+// Cellular modem (SIM7600E-H) — for remote stations without WiFi/Ethernet
+#[cfg(feature = "cellular")]
+pub mod cellular;
+
+// Ethernet (W5500) — wired connectivity for industrial installations
+#[cfg(feature = "ethernet")]
+pub mod ethernet;
+
 use crate::core::data_pipeline::WeatherReading;
 use crate::error::Result;
 
