@@ -7,18 +7,18 @@
 ///
 /// # Wiring (UART4)
 ///
-/// | STM32F407 Pin | SIM7600 Pin | Function                    |
-/// |---------------|-------------|-----------------------------|
-/// | PC10          | RXD         | UART4 TX -> modem RX        |
-/// | PC11          | TXD         | UART4 RX <- modem TX        |
-/// | PD5           | PWRKEY      | Power key (active low pulse) |
-/// | PD6           | STATUS      | Module status (input, high=on) |
-/// | PD7           | RESET       | Hardware reset (active low)  |
-/// | PE2           | DTR         | Data Terminal Ready          |
+/// | STM32F407 Pin | SIM7600 Pin | Function                     |
+/// |---------------|-------------|------------------------------|
+/// | PC10          | RXD         | UART4 TX -> modem RX         |
+/// | PC11          | TXD         | UART4 RX <- modem TX         |
+/// | PD5           | PWRKEY      | Power key (active low pulse)  |
+/// | PD6           | STATUS      | Module status (input, high=on)|
+/// | PD7           | RESET       | Hardware reset (active low)   |
+/// | PE2           | DTR         | Data Terminal Ready            |
 ///
 /// # Power-On Sequence
 ///
-/// 1. Drive PWRKEY low for >= 500ms
+/// 1. Drive PWRKEY low for >= 1.5s
 /// 2. Release PWRKEY (high)
 /// 3. Wait for STATUS pin to go high (up to 10s)
 /// 4. Wait ~3s for UART to become ready
@@ -28,7 +28,11 @@ use crate::error::{Error, Result};
 use heapless::String;
 use serde::{Deserialize, Serialize};
 
-/// Pin assignments for UART4 / SIM7600 control lines.
+// ---------------------------------------------------------------------------
+// Pin assignments (UART4 on STM32F407)
+// ---------------------------------------------------------------------------
+
+/// Pin constants referenced from `crate::drivers::stm32f407::pins`.
 pub mod pins {
     /// PC10 — UART4 TX (to SIM7600 RXD).
     pub const UART4_TX: u8 = 42;
@@ -44,119 +48,110 @@ pub mod pins {
     pub const SIM7600_DTR: u8 = 66;
 }
 
-// =============================================================================
-// UART Configuration
-// =============================================================================
+// ---------------------------------------------------------------------------
+// UART configuration
+// ---------------------------------------------------------------------------
 
-/// Default baud rate for AT command interface.
+/// Default baud rate for AT command interface (bps).
 pub const UART_BAUD_RATE: u32 = 115_200;
 
-// =============================================================================
-// AT Command Constants
-// =============================================================================
+// ---------------------------------------------------------------------------
+// Timing constants
+// ---------------------------------------------------------------------------
 
-/// Basic AT attention command.
-const AT: &[u8] = b"AT\r\n";
-/// Disable command echo.
+/// PWRKEY pulse duration for power toggle (~1.5s in spin cycles).
+const PWRKEY_PULSE_CYCLES: u32 = 15_000_000;
+/// Maximum time to wait for STATUS high after power-on (ms).
+const POWER_ON_TIMEOUT_MS: u32 = 10_000;
+/// Delay after STATUS goes high before sending AT commands (ms).
+const POST_BOOT_DELAY_MS: u32 = 3_000;
+/// Default AT command response timeout (ms).
+const AT_DEFAULT_TIMEOUT_MS: u32 = 5_000;
+/// Extended timeout for network/data operations (ms).
+const AT_NETWORK_TIMEOUT_MS: u32 = 30_000;
+/// Timeout for registration polling (ms).
+const REGISTRATION_TIMEOUT_MS: u32 = 120_000;
+/// Interval between periodic signal quality checks (ms).
+const SIGNAL_POLL_INTERVAL_MS: u32 = 60_000;
+
+// ---------------------------------------------------------------------------
+// Buffer sizes
+// ---------------------------------------------------------------------------
+
+/// Receive buffer size for AT responses and URCs.
+const RX_BUF_SIZE: usize = 512;
+/// Transmit staging buffer size for building AT commands.
+const TX_BUF_SIZE: usize = 256;
+
+// ---------------------------------------------------------------------------
+// AT command byte strings
+// ---------------------------------------------------------------------------
+
+const AT_SYNC: &[u8] = b"AT\r\n";
 const AT_ECHO_OFF: &[u8] = b"ATE0\r\n";
-/// Query SIM card status.
 const AT_CPIN: &[u8] = b"AT+CPIN?\r\n";
-/// Query signal quality (RSSI, BER).
+const AT_GSN: &[u8] = b"AT+GSN\r\n";
+const AT_CICCID: &[u8] = b"AT+CICCID\r\n";
 const AT_CSQ: &[u8] = b"AT+CSQ\r\n";
-/// Query network registration status.
+const AT_CESQ: &[u8] = b"AT+CESQ\r\n";
 const AT_CREG: &[u8] = b"AT+CREG?\r\n";
-/// Query GPRS registration status.
-const AT_CGREG: &[u8] = b"AT+CGREG?\r\n";
-/// Set PDP context (APN configuration).
-const AT_CGDCONT: &[u8] = b"AT+CGDCONT=";
-/// Open a network connection.
-const AT_CIPOPEN: &[u8] = b"AT+CIPOPEN=";
-/// Send data on a connection.
-const AT_CIPSEND: &[u8] = b"AT+CIPSEND=";
-/// Close a network connection.
-const AT_CIPCLOSE: &[u8] = b"AT+CIPCLOSE=";
-/// Power off the module.
-const AT_CPOWD: &[u8] = b"AT+CPOWD=1\r\n";
-/// Set phone functionality.
-const AT_CFUN: &[u8] = b"AT+CFUN=";
-/// Query IMEI (serial number).
-const AT_CGSN: &[u8] = b"AT+CGSN\r\n";
-/// Query IMSI (SIM identity).
-const AT_CIMI: &[u8] = b"AT+CIMI\r\n";
-/// Query operator name.
-const AT_COPS: &[u8] = b"AT+COPS?\r\n";
-/// Start data connection.
-const AT_NETOPEN: &[u8] = b"AT+NETOPEN\r\n";
-/// Close data connection.
-const AT_NETCLOSE: &[u8] = b"AT+NETCLOSE\r\n";
-/// Query IP address.
-const AT_IPADDR: &[u8] = b"AT+IPADDR\r\n";
-/// Send SMS in text mode.
-const AT_CMGF: &[u8] = b"AT+CMGF=1\r\n";
-/// Send SMS.
-const AT_CMGS: &[u8] = b"AT+CMGS=";
-/// Enable URC for network registration.
+const AT_CEREG: &[u8] = b"AT+CEREG?\r\n";
 const AT_CREG_URC: &[u8] = b"AT+CREG=1\r\n";
-/// Enable URC for GPRS registration.
-const AT_CGREG_URC: &[u8] = b"AT+CGREG=1\r\n";
-/// Set error report format to verbose.
+const AT_CEREG_URC: &[u8] = b"AT+CEREG=1\r\n";
+const AT_COPS: &[u8] = b"AT+COPS?\r\n";
+const AT_CPSI: &[u8] = b"AT+CPSI?\r\n";
+const AT_CGDCONT: &[u8] = b"AT+CGDCONT=";
+const AT_CGACT_ON: &[u8] = b"AT+CGACT=1,1\r\n";
+const AT_CGACT_OFF: &[u8] = b"AT+CGACT=0,1\r\n";
+const AT_CIPOPEN: &[u8] = b"AT+CIPOPEN=";
+const AT_CIPSEND: &[u8] = b"AT+CIPSEND=";
+const AT_CIPCLOSE: &[u8] = b"AT+CIPCLOSE=";
+const AT_NETOPEN: &[u8] = b"AT+NETOPEN\r\n";
+const AT_NETCLOSE: &[u8] = b"AT+NETCLOSE\r\n";
+const AT_IPADDR: &[u8] = b"AT+IPADDR\r\n";
+const AT_CPOF: &[u8] = b"AT+CPOF\r\n";
 const AT_CMEE: &[u8] = b"AT+CMEE=2\r\n";
+const AT_CFUN: &[u8] = b"AT+CFUN=1\r\n";
 
-/// Expected "OK" response suffix.
+/// Expected "OK" response.
 const RESP_OK: &[u8] = b"OK";
 /// Expected "ERROR" response.
 const RESP_ERROR: &[u8] = b"ERROR";
-/// CPIN ready response.
+/// SIM ready indicator.
 const RESP_CPIN_READY: &[u8] = b"+CPIN: READY";
 
-/// AT command response timeout (ms).
-const AT_DEFAULT_TIMEOUT_MS: u32 = 5_000;
-/// Extended timeout for network operations (ms).
-const AT_NETWORK_TIMEOUT_MS: u32 = 30_000;
-/// PWRKEY pulse duration (ms equivalent in cycles).
-const PWRKEY_PULSE_MS: u32 = 500;
-/// Maximum time to wait for STATUS after power-on (ms).
-const POWER_ON_WAIT_MS: u32 = 10_000;
+// ---------------------------------------------------------------------------
+// Public types
+// ---------------------------------------------------------------------------
 
-/// Maximum receive buffer size.
-const RX_BUF_SIZE: usize = 512;
-/// Maximum number of TCP connections supported.
-const MAX_CONNECTIONS: usize = 10;
-
-// =============================================================================
-// Types
-// =============================================================================
-
-/// State of the cellular modem.
+/// SIM7600 module state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CellularState {
     /// Module is powered off.
     PowerOff,
-    /// Module is booting (PWRKEY pulsed, waiting for STATUS).
-    Booting,
-    /// Checking SIM card presence and PIN.
-    SimCheck,
-    /// Registering on the cellular network.
-    Registering,
-    /// Registered on the network (voice/SMS available).
+    /// Module is booting / running init sequence.
+    Initializing,
+    /// SIM card detected and ready.
+    SimReady,
+    /// Searching for a network.
+    Searching,
+    /// Registered on the cellular network.
     Registered,
-    /// Establishing data (PDP/IP) connection.
-    DataConnecting,
-    /// Data connection is active (IP assigned).
+    /// IP data connection is active.
     DataConnected,
     /// Unrecoverable error state.
     Error,
 }
 
-/// Registration status from AT+CREG/AT+CGREG.
+/// Network registration status from AT+CREG / AT+CEREG.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RegistrationStatus {
-    NotRegistered = 0,
-    RegisteredHome = 1,
-    Searching = 2,
-    Denied = 3,
-    Unknown = 4,
-    RegisteredRoaming = 5,
+    NotRegistered,
+    RegisteredHome,
+    Searching,
+    Denied,
+    Unknown,
+    RegisteredRoaming,
 }
 
 impl From<u8> for RegistrationStatus {
@@ -172,63 +167,67 @@ impl From<u8> for RegistrationStatus {
     }
 }
 
-/// Cellular modem status information.
-#[derive(Debug, Clone)]
-pub struct CellularInfo {
-    /// Current modem state.
-    pub state: CellularState,
-    /// Received Signal Strength Indicator in dBm (e.g., -85).
-    /// 0 means unknown.
-    pub rssi_dbm: i8,
-    /// Bit Error Rate (0-7, 99 = unknown).
+/// Signal quality information.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct SignalQuality {
+    /// RSSI in dBm (e.g. -85). 0 means unknown.
+    pub rssi_dbm: i16,
+    /// Bit error rate (0-7, 99 = unknown).
     pub ber: u8,
-    /// Operator name (e.g., "Airtel", "Jio").
+    /// LTE Reference Signal Received Power in dBm.
+    pub rsrp: i16,
+    /// LTE Reference Signal Received Quality in dB.
+    pub rsrq: i16,
+}
+
+impl Default for SignalQuality {
+    fn default() -> Self {
+        Self {
+            rssi_dbm: 0,
+            ber: 99,
+            rsrp: 0,
+            rsrq: 0,
+        }
+    }
+}
+
+/// Runtime information about the cellular module.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CellularInfo {
+    /// Current module state.
+    pub state: CellularState,
+    /// Signal quality metrics.
+    pub signal: SignalQuality,
+    /// Operator name (e.g. "Airtel", "Jio").
     pub operator: String<32>,
-    /// IMEI (International Mobile Equipment Identity).
-    pub imei: String<16>,
-    /// Network registration status.
-    pub registration_status: u8,
-    /// Assigned IP address (from PDP context).
+    /// IMEI (International Mobile Equipment Identity, 15 digits).
+    pub imei: String<20>,
+    /// ICCID (SIM card serial number, up to 22 digits).
+    pub iccid: String<24>,
+    /// Assigned IP address from PDP context.
     pub ip_addr: [u8; 4],
+    /// Current radio access technology: "4G", "3G", or "2G".
+    pub network_type: String<8>,
 }
 
 impl Default for CellularInfo {
     fn default() -> Self {
         Self {
             state: CellularState::PowerOff,
-            rssi_dbm: 0,
-            ber: 99,
+            signal: SignalQuality::default(),
             operator: String::new(),
             imei: String::new(),
-            registration_status: 0,
+            iccid: String::new(),
             ip_addr: [0; 4],
+            network_type: String::new(),
         }
     }
-}
-
-/// Unsolicited Result Code (URC) type.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Urc {
-    /// Network registration change: +CREG: <stat>
-    Creg(u8),
-    /// GPRS registration change: +CGREG: <stat>
-    Cgreg(u8),
-    /// Incoming call.
-    Ring,
-    /// Connection closed by remote: +CIPCLOSE: <link_num>,<reason>
-    CipClose(u8),
-    /// Incoming data: +CIPRXGET: <mode>,<link_num>,<data_len>
-    CipRxGet(u8, u16),
-    /// Unknown / unhandled URC.
-    Unknown,
 }
 
 /// SIM7600E-H 4G LTE cellular modem driver.
 ///
 /// Manages the modem power state, AT command sequencing, network
-/// registration, and TCP/IP data connections. Incoming bytes from
-/// the UART should be fed to `on_byte_received()` which buffers
-/// and parses responses and URCs.
+/// registration, and TCP/IP data connections over UART4.
 pub struct Sim7600<UART, PWRKEY, STATUS, RST, DTR> {
     uart: UART,
     pwrkey: PWRKEY,
@@ -237,22 +236,21 @@ pub struct Sim7600<UART, PWRKEY, STATUS, RST, DTR> {
     dtr: DTR,
     state: CellularState,
     info: CellularInfo,
-    /// Internal receive buffer for AT responses.
     rx_buf: [u8; RX_BUF_SIZE],
-    /// Current write position in rx_buf.
     rx_pos: usize,
-    /// Timestamp (ms) of the last AT command sent.
+    tx_buf: [u8; TX_BUF_SIZE],
+    apn: String<64>,
+    socket_connected: bool,
+    /// Timestamp of the last AT command sent (ms).
     last_at_ms: u32,
-    /// Timestamp (ms) when power-on sequence started.
-    power_on_ms: u32,
-    /// Current AT command timeout (ms).
+    /// Current AT response timeout (ms).
     at_timeout_ms: u32,
-    /// True if we are waiting for an AT response.
+    /// Whether we are waiting for an AT response.
     awaiting_response: bool,
-    /// True if the last response was OK.
+    /// Whether the last response was "OK".
     last_response_ok: bool,
-    /// Initialization step counter.
-    init_step: u8,
+    /// Timestamp of the last signal quality poll (ms).
+    last_signal_poll_ms: u32,
 }
 
 impl<UART, PWRKEY, STATUS, RST, DTR> Sim7600<UART, PWRKEY, STATUS, RST, DTR>
@@ -263,10 +261,14 @@ where
     RST: embedded_hal::digital::OutputPin,
     DTR: embedded_hal::digital::OutputPin,
 {
+    // =======================================================================
+    // Construction
+    // =======================================================================
+
     /// Create a new SIM7600 driver instance.
     ///
-    /// The modem starts in `PowerOff` state. Call `power_on()` to begin
-    /// the boot sequence.
+    /// The modem starts in `PowerOff` state. Call [`power_on`] followed by
+    /// [`init`] to bring it online.
     pub fn new(uart: UART, pwrkey: PWRKEY, status: STATUS, rst: RST, dtr: DTR) -> Self {
         Self {
             uart,
@@ -278,368 +280,426 @@ where
             info: CellularInfo::default(),
             rx_buf: [0u8; RX_BUF_SIZE],
             rx_pos: 0,
+            tx_buf: [0u8; TX_BUF_SIZE],
+            apn: String::new(),
+            socket_connected: false,
             last_at_ms: 0,
-            power_on_ms: 0,
             at_timeout_ms: AT_DEFAULT_TIMEOUT_MS,
             awaiting_response: false,
             last_response_ok: false,
-            init_step: 0,
+            last_signal_poll_ms: 0,
         }
     }
 
+    // =======================================================================
+    // Power management
+    // =======================================================================
+
     /// Power on the SIM7600 module.
     ///
-    /// Drives PWRKEY low for 500ms, then waits for the STATUS pin to go
-    /// high (indicating the module has booted). The actual waiting is done
-    /// in `poll()` to avoid blocking.
-    pub fn power_on(&mut self, now_ms: u32) -> Result<()> {
-        // Ensure DTR is low (active — modem stays awake)
-        self.dtr.set_low().map_err(|_| Error::SpiBusError)?;
+    /// Drives PWRKEY low for ~1.5s, then waits for the STATUS pin to go
+    /// high (indicating the module has booted). Returns an error if the
+    /// module does not respond within 10 seconds.
+    pub fn power_on(&mut self) -> Result<()> {
+        // Ensure DTR is low (active — keeps modem awake)
+        self.dtr.set_low().map_err(|_| Error::CellularInitFailed)?;
 
-        // Pulse PWRKEY low for >= 500ms
-        self.pwrkey.set_low().map_err(|_| Error::SpiBusError)?;
-        spin_delay(PWRKEY_PULSE_MS * 10_000); // ~500ms busy wait
-        self.pwrkey.set_high().map_err(|_| Error::SpiBusError)?;
+        // Ensure RST is not asserted
+        self.rst.set_high().map_err(|_| Error::CellularInitFailed)?;
 
-        self.state = CellularState::Booting;
-        self.info.state = CellularState::Booting;
-        self.power_on_ms = now_ms;
-        self.init_step = 0;
+        // Pulse PWRKEY low for ~1.5s to toggle power on
+        self.pwrkey.set_low().map_err(|_| Error::CellularInitFailed)?;
+        spin_delay(PWRKEY_PULSE_CYCLES);
+        self.pwrkey.set_high().map_err(|_| Error::CellularInitFailed)?;
 
-        log::info!("SIM7600: power-on sequence initiated");
+        // Wait for STATUS pin to go high (module booted)
+        let mut waited: u32 = 0;
+        let step_cycles: u32 = 100_000; // ~10ms per step
+        let step_ms: u32 = 10;
+        while !self.is_status_high() {
+            spin_delay(step_cycles);
+            waited += step_ms;
+            if waited > POWER_ON_TIMEOUT_MS {
+                log::error!("SIM7600: power-on timeout, STATUS not high");
+                self.state = CellularState::Error;
+                self.info.state = CellularState::Error;
+                return Err(Error::CellularTimeout);
+            }
+        }
+
+        // Allow UART to stabilise after boot
+        spin_delay(POST_BOOT_DELAY_MS * 10_000);
+
+        self.state = CellularState::Initializing;
+        self.info.state = CellularState::Initializing;
+        log::info!("SIM7600: powered on, STATUS high after {}ms", waited);
         Ok(())
     }
 
-    /// Power off the SIM7600 module gracefully via AT command.
+    /// Power off the SIM7600 module.
     ///
-    /// Falls back to PWRKEY pulse if AT command fails.
+    /// Attempts a graceful shutdown via `AT+CPOF`. If the module is still
+    /// running after the command, falls back to a PWRKEY pulse.
     pub fn power_off(&mut self) -> Result<()> {
-        // Try graceful shutdown via AT+CPOWD
-        let _ = self.send_at(AT_CPOWD);
-        spin_delay(2_000_000);
+        // Try graceful shutdown
+        let _ = self.send_at(AT_CPOF);
+        spin_delay(3_000_000);
 
         // If still on, force off via PWRKEY pulse
         if self.is_status_high() {
-            self.pwrkey.set_low().map_err(|_| Error::SpiBusError)?;
-            spin_delay(PWRKEY_PULSE_MS * 30_000); // ~1.5s for power-off
-            self.pwrkey.set_high().map_err(|_| Error::SpiBusError)?;
+            self.pwrkey.set_low().map_err(|_| Error::CellularInitFailed)?;
+            spin_delay(PWRKEY_PULSE_CYCLES);
+            self.pwrkey.set_high().map_err(|_| Error::CellularInitFailed)?;
             spin_delay(5_000_000);
         }
 
         self.state = CellularState::PowerOff;
         self.info.state = CellularState::PowerOff;
         self.awaiting_response = false;
-
+        self.socket_connected = false;
         log::info!("SIM7600: powered off");
         Ok(())
     }
 
-    /// Initialize the modem after boot. Sends the startup AT command sequence.
+    // =======================================================================
+    // Initialisation
+    // =======================================================================
+
+    /// Full initialisation sequence.
     ///
-    /// This is called internally by `poll()` once the STATUS pin goes high.
-    /// The initialization proceeds step by step across multiple poll cycles.
-    pub fn init(&mut self, now_ms: u32) -> Result<()> {
-        if self.awaiting_response {
-            return Ok(()); // Wait for current command to complete
+    /// Sends the startup AT command sequence: sync, disable echo, enable
+    /// verbose errors, check SIM status, read IMEI, and read ICCID.
+    /// The module must be powered on before calling this.
+    pub fn init(&mut self) -> Result<()> {
+        if self.state == CellularState::PowerOff {
+            return Err(Error::CellularInitFailed);
         }
 
-        match self.init_step {
-            0 => {
-                // Send basic AT to test communication
-                self.send_at(AT)?;
-                self.at_timeout_ms = 2_000;
-                self.init_step = 1;
-            }
-            1 => {
-                if !self.last_response_ok {
-                    // Retry AT command
-                    self.init_step = 0;
-                    return Ok(());
-                }
-                // Disable echo
-                self.send_at(AT_ECHO_OFF)?;
-                self.init_step = 2;
-            }
-            2 => {
-                // Enable verbose error reporting
-                self.send_at(AT_CMEE)?;
-                self.init_step = 3;
-            }
-            3 => {
-                // Enable network registration URCs
-                self.send_at(AT_CREG_URC)?;
-                self.init_step = 4;
-            }
-            4 => {
-                // Enable GPRS registration URCs
-                self.send_at(AT_CGREG_URC)?;
-                self.init_step = 5;
-            }
-            5 => {
-                // Query IMEI
-                self.send_at(AT_CGSN)?;
-                self.init_step = 6;
-            }
-            6 => {
-                // Check SIM card
-                self.send_at(AT_CPIN)?;
-                self.at_timeout_ms = AT_DEFAULT_TIMEOUT_MS;
-                self.init_step = 7;
-            }
-            7 => {
-                // SIM check done, move to registering
-                self.state = CellularState::SimCheck;
-                self.info.state = CellularState::SimCheck;
+        self.state = CellularState::Initializing;
+        self.info.state = CellularState::Initializing;
 
-                // Set full functionality
-                self.send_at_with_param(AT_CFUN, b"1\r\n")?;
-                self.at_timeout_ms = AT_NETWORK_TIMEOUT_MS;
-                self.init_step = 8;
+        // AT sync — retry up to 5 times
+        let mut synced = false;
+        for _ in 0..5 {
+            if self.send_at_ok(AT_SYNC, 2_000).is_ok() {
+                synced = true;
+                break;
             }
-            8 => {
-                // Query registration status
-                self.send_at(AT_CREG)?;
-                self.init_step = 9;
-            }
-            9 => {
-                // Check if registered
-                let reg = RegistrationStatus::from(self.info.registration_status);
-                if reg == RegistrationStatus::RegisteredHome
-                    || reg == RegistrationStatus::RegisteredRoaming
-                {
-                    self.state = CellularState::Registered;
-                    self.info.state = CellularState::Registered;
-
-                    // Query operator
-                    self.send_at(AT_COPS)?;
-                    self.init_step = 10;
-                } else if reg == RegistrationStatus::Searching {
-                    self.state = CellularState::Registering;
-                    self.info.state = CellularState::Registering;
-                    // Will be re-checked in poll()
-                    self.init_step = 8;
-                } else {
-                    // Not yet registered, retry
-                    self.init_step = 8;
-                }
-            }
-            10 => {
-                // Query signal quality
-                self.send_at(AT_CSQ)?;
-                self.init_step = 11;
-            }
-            11 => {
-                // Initialization complete
-                self.at_timeout_ms = AT_DEFAULT_TIMEOUT_MS;
-                log::info!(
-                    "SIM7600: initialized, IMEI={}, operator={}, RSSI={}dBm",
-                    self.info.imei.as_str(),
-                    self.info.operator.as_str(),
-                    self.info.rssi_dbm,
-                );
-                self.init_step = 255; // Done
-            }
-            _ => {}
+            spin_delay(500_000);
+        }
+        if !synced {
+            log::error!("SIM7600: AT sync failed");
+            self.state = CellularState::Error;
+            self.info.state = CellularState::Error;
+            return Err(Error::CellularInitFailed);
         }
 
+        // Disable echo
+        self.send_at_ok(AT_ECHO_OFF, AT_DEFAULT_TIMEOUT_MS)?;
+
+        // Enable verbose error reporting
+        self.send_at_ok(AT_CMEE, AT_DEFAULT_TIMEOUT_MS)?;
+
+        // Check SIM card
+        let cpin_resp = self.send_at_response(AT_CPIN, AT_DEFAULT_TIMEOUT_MS)?;
+        if !contains_subsequence(&cpin_resp, RESP_CPIN_READY) {
+            log::error!("SIM7600: SIM card not ready");
+            self.state = CellularState::Error;
+            self.info.state = CellularState::Error;
+            return Err(Error::CellularSimError);
+        }
+        self.state = CellularState::SimReady;
+        self.info.state = CellularState::SimReady;
+        log::info!("SIM7600: SIM card ready");
+
+        // Read IMEI (AT+GSN)
+        let imei_resp = self.send_at_response(AT_GSN, AT_DEFAULT_TIMEOUT_MS)?;
+        if let Some(imei) = parse_digit_string(&imei_resp, 15) {
+            self.info.imei = imei;
+            log::info!("SIM7600: IMEI={}", self.info.imei.as_str());
+        }
+
+        // Read ICCID (AT+CICCID)
+        let iccid_resp = self.send_at_response(AT_CICCID, AT_DEFAULT_TIMEOUT_MS)?;
+        if let Some(pos) = find_subsequence(&iccid_resp, b"+ICCID: ") {
+            let start = pos + 8;
+            if let Some(iccid) = parse_digit_string(&iccid_resp[start..], 19) {
+                self.info.iccid = iccid;
+            } else if let Some(iccid) = parse_digit_string(&iccid_resp[start..], 20) {
+                self.info.iccid = iccid;
+            }
+            log::info!("SIM7600: ICCID={}", self.info.iccid.as_str());
+        }
+
+        // Enable network registration URCs
+        let _ = self.send_at_ok(AT_CREG_URC, AT_DEFAULT_TIMEOUT_MS);
+        let _ = self.send_at_ok(AT_CEREG_URC, AT_DEFAULT_TIMEOUT_MS);
+
+        // Set full functionality
+        let _ = self.send_at_ok(AT_CFUN, AT_NETWORK_TIMEOUT_MS);
+
+        log::info!("SIM7600: initialisation complete");
         Ok(())
     }
 
-    /// Main poll function. Should be called periodically from the main loop.
-    ///
-    /// Handles: power-on sequencing, AT command timeout, initialization
-    /// steps, and periodic signal quality checks.
-    pub fn poll(&mut self, now_ms: u32) -> Result<()> {
-        // Drain incoming UART bytes
-        self.drain_uart();
+    // =======================================================================
+    // APN configuration
+    // =======================================================================
 
-        match self.state {
-            CellularState::PowerOff => {
-                // Nothing to do
-            }
-            CellularState::Booting => {
-                // Wait for STATUS pin to go high
-                if self.is_status_high() {
-                    // Allow 3 seconds for UART to stabilize after STATUS
-                    if now_ms.wrapping_sub(self.power_on_ms) > 3_000 {
-                        log::info!("SIM7600: module booted, starting init");
-                        self.init_step = 0;
-                        self.state = CellularState::SimCheck;
-                        self.info.state = CellularState::SimCheck;
-                    }
-                } else if now_ms.wrapping_sub(self.power_on_ms) > POWER_ON_WAIT_MS {
-                    log::error!("SIM7600: boot timeout, STATUS not high");
-                    self.state = CellularState::Error;
-                    self.info.state = CellularState::Error;
-                    return Err(Error::SpiBusError);
-                }
-            }
-            CellularState::SimCheck
-            | CellularState::Registering
-            | CellularState::Registered => {
-                // Check AT command timeout
-                if self.awaiting_response {
-                    if now_ms.wrapping_sub(self.last_at_ms) > self.at_timeout_ms {
-                        log::warn!("SIM7600: AT command timeout");
-                        self.awaiting_response = false;
-                        self.last_response_ok = false;
-                        self.rx_pos = 0;
-                    }
-                    return Ok(());
-                }
-
-                // Continue initialization if not done
-                if self.init_step < 255 {
-                    self.init(now_ms)?;
-                }
-            }
-            CellularState::DataConnecting => {
-                if self.awaiting_response {
-                    if now_ms.wrapping_sub(self.last_at_ms) > AT_NETWORK_TIMEOUT_MS {
-                        log::warn!("SIM7600: data connect timeout");
-                        self.awaiting_response = false;
-                        self.state = CellularState::Registered;
-                        self.info.state = CellularState::Registered;
-                    }
-                }
-            }
-            CellularState::DataConnected => {
-                // Periodic signal quality check every 60 seconds
-                if !self.awaiting_response
-                    && now_ms.wrapping_sub(self.last_at_ms) > 60_000
-                {
-                    let _ = self.signal_quality();
-                }
-            }
-            CellularState::Error => {
-                // Could attempt recovery here
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Query signal quality. Returns (RSSI in dBm, BER).
-    pub fn signal_quality(&mut self) -> Result<(i8, u8)> {
-        self.send_at(AT_CSQ)?;
-        // Response will be parsed asynchronously; return cached values
-        Ok((self.info.rssi_dbm, self.info.ber))
-    }
-
-    /// Returns `true` if the modem is registered on the network.
-    pub fn is_registered(&self) -> bool {
-        let reg = RegistrationStatus::from(self.info.registration_status);
-        reg == RegistrationStatus::RegisteredHome
-            || reg == RegistrationStatus::RegisteredRoaming
-    }
-
-    /// Set the APN (Access Point Name) for data connections.
+    /// Configure the APN for data connections.
     ///
     /// # Example
     /// ```ignore
-    /// modem.set_apn(b"internet")?;
+    /// modem.set_apn("internet")?;
     /// ```
-    pub fn set_apn(&mut self, apn: &[u8]) -> Result<()> {
+    pub fn set_apn(&mut self, apn: &str) -> Result<()> {
+        self.apn.clear();
+        self.apn
+            .push_str(apn)
+            .map_err(|_| Error::InvalidConfig)?;
+
         // AT+CGDCONT=1,"IP","<apn>"
-        self.tx_buf_clear();
-        self.tx_write(AT_CGDCONT);
-        self.tx_write(b"1,\"IP\",\"");
-        self.tx_write(apn);
-        self.tx_write(b"\"\r\n");
-        self.tx_flush()?;
-        self.awaiting_response = true;
+        let mut cmd_buf = [0u8; 128];
+        let mut pos = 0;
+        pos += copy_to_buf(&mut cmd_buf, pos, AT_CGDCONT);
+        pos += copy_to_buf(&mut cmd_buf, pos, b"1,\"IP\",\"");
+        pos += copy_to_buf(&mut cmd_buf, pos, apn.as_bytes());
+        pos += copy_to_buf(&mut cmd_buf, pos, b"\"\r\n");
+
+        self.send_at_ok(&cmd_buf[..pos], AT_DEFAULT_TIMEOUT_MS)?;
+        log::info!("SIM7600: APN set to '{}'", apn);
         Ok(())
     }
 
-    /// Establish a data connection (PDP context activation).
-    pub fn data_connect(&mut self) -> Result<()> {
-        if !self.is_registered() {
-            return Err(Error::SpiBusError);
+    // =======================================================================
+    // Network registration
+    // =======================================================================
+
+    /// Wait for network registration.
+    ///
+    /// Polls AT+CREG? and AT+CEREG? until the module registers on a
+    /// network (home or roaming). Times out after ~120 seconds.
+    pub fn register_network(&mut self) -> Result<()> {
+        self.state = CellularState::Searching;
+        self.info.state = CellularState::Searching;
+
+        let mut elapsed: u32 = 0;
+        let poll_interval: u32 = 3_000;
+
+        loop {
+            // Query CS registration
+            if let Ok(resp) = self.send_at_response(AT_CREG, AT_DEFAULT_TIMEOUT_MS) {
+                if let Some(reg) = parse_registration_response(&resp) {
+                    match reg {
+                        RegistrationStatus::RegisteredHome
+                        | RegistrationStatus::RegisteredRoaming => {
+                            self.state = CellularState::Registered;
+                            self.info.state = CellularState::Registered;
+                            self.query_operator();
+                            self.refresh_signal_quality();
+                            self.query_network_type();
+                            log::info!("SIM7600: registered on network (CS)");
+                            return Ok(());
+                        }
+                        RegistrationStatus::Denied => {
+                            log::error!("SIM7600: registration denied");
+                            self.state = CellularState::Error;
+                            self.info.state = CellularState::Error;
+                            return Err(Error::CellularRegistrationFailed);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            // Query EPS (LTE) registration
+            if let Ok(resp) = self.send_at_response(AT_CEREG, AT_DEFAULT_TIMEOUT_MS) {
+                if let Some(reg) = parse_registration_response(&resp) {
+                    match reg {
+                        RegistrationStatus::RegisteredHome
+                        | RegistrationStatus::RegisteredRoaming => {
+                            self.state = CellularState::Registered;
+                            self.info.state = CellularState::Registered;
+                            self.query_operator();
+                            self.refresh_signal_quality();
+                            self.query_network_type();
+                            log::info!("SIM7600: registered on network (EPS/LTE)");
+                            return Ok(());
+                        }
+                        RegistrationStatus::Denied => {
+                            log::error!("SIM7600: EPS registration denied");
+                            self.state = CellularState::Error;
+                            self.info.state = CellularState::Error;
+                            return Err(Error::CellularRegistrationFailed);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            elapsed += poll_interval;
+            if elapsed > REGISTRATION_TIMEOUT_MS {
+                log::error!("SIM7600: registration timeout after {}ms", elapsed);
+                self.state = CellularState::Error;
+                self.info.state = CellularState::Error;
+                return Err(Error::CellularRegistrationFailed);
+            }
+
+            spin_delay(poll_interval * 10_000);
+        }
+    }
+
+    // =======================================================================
+    // Data connection
+    // =======================================================================
+
+    /// Establish a data (IP) connection.
+    ///
+    /// Activates the PDP context and opens the network stack. The APN
+    /// must be configured via [`set_apn`] before calling this.
+    pub fn open_data_connection(&mut self) -> Result<()> {
+        if self.state != CellularState::Registered {
+            return Err(Error::CellularDataConnectionFailed);
         }
 
-        self.state = CellularState::DataConnecting;
-        self.info.state = CellularState::DataConnecting;
-        self.at_timeout_ms = AT_NETWORK_TIMEOUT_MS;
+        // Activate PDP context
+        self.send_at_ok(AT_CGACT_ON, AT_NETWORK_TIMEOUT_MS)
+            .map_err(|_| Error::CellularDataConnectionFailed)?;
 
-        self.send_at(AT_NETOPEN)?;
+        // Open network stack
+        self.send_at_ok(AT_NETOPEN, AT_NETWORK_TIMEOUT_MS)
+            .map_err(|_| Error::CellularDataConnectionFailed)?;
+
+        // Query assigned IP address
+        if let Ok(resp) = self.send_at_response(AT_IPADDR, AT_DEFAULT_TIMEOUT_MS) {
+            self.parse_ipaddr(&resp);
+        }
+
+        self.state = CellularState::DataConnected;
+        self.info.state = CellularState::DataConnected;
+        log::info!(
+            "SIM7600: data connected, IP={}.{}.{}.{}",
+            self.info.ip_addr[0],
+            self.info.ip_addr[1],
+            self.info.ip_addr[2],
+            self.info.ip_addr[3],
+        );
         Ok(())
     }
 
-    /// Open a TCP connection.
+    /// Tear down the data connection.
+    ///
+    /// Closes the network stack and deactivates the PDP context.
+    pub fn close_data_connection(&mut self) -> Result<()> {
+        // Close any open socket first
+        if self.socket_connected {
+            let _ = self.close_tcp();
+        }
+
+        let _ = self.send_at_ok(AT_NETCLOSE, AT_NETWORK_TIMEOUT_MS);
+        let _ = self.send_at_ok(AT_CGACT_OFF, AT_DEFAULT_TIMEOUT_MS);
+
+        if self.state == CellularState::DataConnected {
+            self.state = CellularState::Registered;
+            self.info.state = CellularState::Registered;
+        }
+        self.info.ip_addr = [0; 4];
+        log::info!("SIM7600: data connection closed");
+        Ok(())
+    }
+
+    // =======================================================================
+    // Signal quality
+    // =======================================================================
+
+    /// Query current signal quality.
+    ///
+    /// Sends AT+CSQ for RSSI/BER and AT+CESQ for LTE-specific RSRP/RSRQ
+    /// metrics. Returns the cached [`SignalQuality`] struct.
+    pub fn signal_quality(&mut self) -> Result<SignalQuality> {
+        self.refresh_signal_quality();
+        if self.info.signal.rssi_dbm == 0 && self.info.signal.ber == 99 {
+            return Err(Error::CellularNoSignal);
+        }
+        Ok(self.info.signal)
+    }
+
+    // =======================================================================
+    // TCP operations
+    // =======================================================================
+
+    /// Open a TCP connection and send data.
     ///
     /// # Arguments
-    /// - `link_num`: connection number (0-9)
-    /// - `ip`: destination IP as a dotted-decimal string (e.g., b"192.168.1.1")
-    /// - `port`: destination TCP port
-    pub fn open_tcp(&mut self, link_num: u8, ip: &[u8], port: u16) -> Result<()> {
+    /// - `host`: remote hostname or IP address as a string
+    /// - `port`: remote TCP port number
+    /// - `data`: payload to send
+    pub fn send_tcp(&mut self, host: &str, port: u16, data: &[u8]) -> Result<()> {
         if self.state != CellularState::DataConnected {
-            return Err(Error::SpiBusError);
+            return Err(Error::CellularTxFailed);
         }
-        if link_num as usize >= MAX_CONNECTIONS {
-            return Err(Error::InvalidConfig);
-        }
-
-        // AT+CIPOPEN=<link_num>,"TCP","<ip>",<port>
-        self.tx_buf_clear();
-        self.tx_write(AT_CIPOPEN);
-        self.tx_write_u8(link_num);
-        self.tx_write(b",\"TCP\",\"");
-        self.tx_write(ip);
-        self.tx_write(b"\",");
-        self.tx_write_u16(port);
-        self.tx_write(b"\r\n");
-        self.tx_flush()?;
-
-        self.awaiting_response = true;
-        self.at_timeout_ms = AT_NETWORK_TIMEOUT_MS;
-        Ok(())
-    }
-
-    /// Send data on an open TCP connection.
-    ///
-    /// The data is sent in command mode using AT+CIPSEND.
-    pub fn send_tcp(&mut self, link_num: u8, data: &[u8]) -> Result<()> {
         if data.is_empty() || data.len() > 1460 {
             return Err(Error::InvalidConfig);
         }
 
-        // AT+CIPSEND=<link_num>,<length>
-        self.tx_buf_clear();
-        self.tx_write(AT_CIPSEND);
-        self.tx_write_u8(link_num);
-        self.tx_write(b",");
-        self.tx_write_u16(data.len() as u16);
-        self.tx_write(b"\r\n");
-        self.tx_flush()?;
+        // AT+CIPOPEN=0,"TCP","<host>",<port>
+        let mut cmd = [0u8; 160];
+        let mut pos = 0;
+        pos += copy_to_buf(&mut cmd, pos, AT_CIPOPEN);
+        pos += copy_to_buf(&mut cmd, pos, b"0,\"TCP\",\"");
+        pos += copy_to_buf(&mut cmd, pos, host.as_bytes());
+        pos += copy_to_buf(&mut cmd, pos, b"\",");
+        pos += copy_u16_ascii(&mut cmd, pos, port);
+        pos += copy_to_buf(&mut cmd, pos, b"\r\n");
 
-        // Wait for '>' prompt (simplified: small delay then send data)
-        spin_delay(50_000);
+        self.send_at_ok(&cmd[..pos], AT_NETWORK_TIMEOUT_MS)
+            .map_err(|_| Error::CellularTxFailed)?;
+        self.socket_connected = true;
 
-        // Send the actual data
+        // AT+CIPSEND=0,<length>
+        let mut send_cmd = [0u8; 32];
+        let mut sp = 0;
+        sp += copy_to_buf(&mut send_cmd, sp, AT_CIPSEND);
+        sp += copy_to_buf(&mut send_cmd, sp, b"0,");
+        sp += copy_u16_ascii(&mut send_cmd, sp, data.len() as u16);
+        sp += copy_to_buf(&mut send_cmd, sp, b"\r\n");
+
+        self.send_at(&send_cmd[..sp])?;
+
+        // Wait for '>' prompt
+        spin_delay(100_000);
+
+        // Send the payload
         for &byte in data {
             self.uart_write_byte(byte)?;
         }
 
-        self.awaiting_response = true;
-        self.at_timeout_ms = AT_NETWORK_TIMEOUT_MS;
+        // Wait for send confirmation
+        self.wait_response(AT_NETWORK_TIMEOUT_MS)?;
+        if !self.last_response_ok {
+            return Err(Error::CellularTxFailed);
+        }
+
+        log::debug!("SIM7600: sent {} bytes to {}:{}", data.len(), host, port);
         Ok(())
     }
 
-    /// Receive data from a TCP connection into the provided buffer.
+    /// Read data from the TCP receive buffer.
     ///
-    /// Returns the number of bytes read (0 if no data available).
-    /// Data is collected by `on_byte_received()` and buffered internally.
-    pub fn recv_tcp(&mut self, _link_num: u8, buf: &mut [u8]) -> Result<usize> {
-        // In a full implementation, incoming +CIPRXGET data would be
-        // buffered per-connection. For now, copy from the internal
-        // rx_buf if data is available.
+    /// Returns the number of bytes copied into `buf`. Returns 0 if no
+    /// data is available.
+    pub fn recv_tcp(&mut self, buf: &mut [u8]) -> Result<usize> {
+        // Drain UART to pick up any pending data
+        self.drain_uart();
+
         let available = self.rx_pos.min(buf.len());
         if available == 0 {
             return Ok(0);
         }
 
         buf[..available].copy_from_slice(&self.rx_buf[..available]);
-        // Shift remaining data
+
+        // Shift remaining data forward
         let remaining = self.rx_pos - available;
         if remaining > 0 {
             self.rx_buf.copy_within(available..self.rx_pos, 0);
@@ -649,75 +709,90 @@ where
         Ok(available)
     }
 
-    /// Close a TCP connection.
-    pub fn close_tcp(&mut self, link_num: u8) -> Result<()> {
-        // AT+CIPCLOSE=<link_num>
-        self.tx_buf_clear();
-        self.tx_write(AT_CIPCLOSE);
-        self.tx_write_u8(link_num);
-        self.tx_write(b"\r\n");
-        self.tx_flush()?;
-
-        self.awaiting_response = true;
-        self.at_timeout_ms = AT_DEFAULT_TIMEOUT_MS;
-        Ok(())
-    }
-
-    /// Send an SMS message in text mode.
-    ///
-    /// # Arguments
-    /// - `number`: phone number as ASCII bytes (e.g., b"+919876543210")
-    /// - `message`: SMS text content (ASCII)
-    pub fn send_sms(&mut self, number: &[u8], message: &[u8]) -> Result<()> {
-        // Set text mode
-        self.send_at(AT_CMGF)?;
-        // Wait for OK (simplified)
-        spin_delay(500_000);
-        self.drain_uart();
-
-        // AT+CMGS="<number>"
-        self.tx_buf_clear();
-        self.tx_write(AT_CMGS);
-        self.tx_write(b"\"");
-        self.tx_write(number);
-        self.tx_write(b"\"\r\n");
-        self.tx_flush()?;
-
-        // Wait for '>' prompt
-        spin_delay(100_000);
-
-        // Send message text followed by Ctrl-Z (0x1A)
-        for &byte in message {
-            self.uart_write_byte(byte)?;
+    /// Close the current TCP connection.
+    pub fn close_tcp(&mut self) -> Result<()> {
+        if !self.socket_connected {
+            return Ok(());
         }
-        self.uart_write_byte(0x1A)?; // Ctrl-Z to send
 
-        self.awaiting_response = true;
-        self.at_timeout_ms = AT_NETWORK_TIMEOUT_MS;
+        // AT+CIPCLOSE=0
+        self.send_at_ok(b"AT+CIPCLOSE=0\r\n", AT_DEFAULT_TIMEOUT_MS)
+            .map_err(|_| Error::CellularTxFailed)?;
+
+        self.socket_connected = false;
+        log::info!("SIM7600: TCP connection closed");
         Ok(())
     }
 
-    /// Returns `true` if the modem has an active data connection.
-    pub fn is_data_connected(&self) -> bool {
+    // =======================================================================
+    // Polling / main loop
+    // =======================================================================
+
+    /// Periodic poll function. Call from the main loop.
+    ///
+    /// Drains the UART, processes URCs, checks registration state, and
+    /// periodically refreshes signal quality. `now_ms` is the current
+    /// monotonic time in milliseconds.
+    pub fn poll(&mut self, now_ms: u32) {
+        if self.state == CellularState::PowerOff || self.state == CellularState::Error {
+            return;
+        }
+
+        // Drain incoming UART bytes and process URCs
+        self.drain_uart();
+        self.process_urcs();
+
+        // Check for AT command timeout
+        if self.awaiting_response {
+            if now_ms.wrapping_sub(self.last_at_ms) > self.at_timeout_ms {
+                log::warn!("SIM7600: AT command timeout");
+                self.awaiting_response = false;
+                self.last_response_ok = false;
+                self.rx_pos = 0;
+            }
+            return;
+        }
+
+        // Periodic signal quality refresh
+        if self.state == CellularState::DataConnected
+            || self.state == CellularState::Registered
+        {
+            if now_ms.wrapping_sub(self.last_signal_poll_ms) > SIGNAL_POLL_INTERVAL_MS {
+                self.refresh_signal_quality();
+                self.last_signal_poll_ms = now_ms;
+            }
+        }
+    }
+
+    /// Returns `true` if the module has an active data connection.
+    pub fn is_connected(&self) -> bool {
         self.state == CellularState::DataConnected
     }
 
-    /// Returns the current modem state.
+    /// Query the current network type (2G / 3G / 4G) via AT+CPSI?.
+    pub fn network_type(&mut self) -> Result<&str> {
+        self.query_network_type();
+        if self.info.network_type.is_empty() {
+            return Err(Error::CellularNoSignal);
+        }
+        Ok(self.info.network_type.as_str())
+    }
+
+    /// Returns the current module state.
     pub fn state(&self) -> CellularState {
         self.state
     }
 
-    /// Returns a reference to the current cellular info.
+    /// Returns a reference to the module info.
     pub fn info(&self) -> &CellularInfo {
         &self.info
     }
 
-    // =========================================================================
-    // AT command engine
-    // =========================================================================
+    // =======================================================================
+    // Private: AT command engine
+    // =======================================================================
 
-    /// Send an AT command (raw bytes). Resets the receive buffer and marks
-    /// the driver as awaiting a response.
+    /// Send a raw AT command (byte slice) over UART.
     fn send_at(&mut self, cmd: &[u8]) -> Result<()> {
         self.rx_pos = 0;
         self.awaiting_response = true;
@@ -727,416 +802,74 @@ where
             self.uart_write_byte(byte)?;
         }
 
-        // Record timestamp (caller must provide via poll)
-        // In practice, last_at_ms is set by the poll loop.
         Ok(())
     }
 
-    /// Send an AT command prefix followed by a parameter suffix.
-    fn send_at_with_param(&mut self, prefix: &[u8], param: &[u8]) -> Result<()> {
-        self.rx_pos = 0;
-        self.awaiting_response = true;
+    /// Wait for an AT response until OK, ERROR, or timeout.
+    ///
+    /// Blocks by spinning and draining the UART. On return,
+    /// `self.last_response_ok` indicates whether OK was received.
+    fn wait_response(&mut self, timeout_ms: u32) -> Result<()> {
+        let step_cycles: u32 = 10_000; // ~1ms per step
+        let mut waited: u32 = 0;
+
+        while waited < timeout_ms {
+            self.drain_uart();
+
+            // Check for OK or ERROR in the buffer
+            if contains_subsequence(&self.rx_buf[..self.rx_pos], RESP_OK) {
+                self.last_response_ok = true;
+                self.awaiting_response = false;
+                return Ok(());
+            }
+            if contains_subsequence(&self.rx_buf[..self.rx_pos], RESP_ERROR) {
+                self.last_response_ok = false;
+                self.awaiting_response = false;
+                return Ok(());
+            }
+
+            spin_delay(step_cycles);
+            waited += 1;
+        }
+
+        self.awaiting_response = false;
         self.last_response_ok = false;
-
-        for &byte in prefix {
-            self.uart_write_byte(byte)?;
-        }
-        for &byte in param {
-            self.uart_write_byte(byte)?;
-        }
-
-        Ok(())
+        Err(Error::CellularTimeout)
     }
 
-    /// Check if the response buffer contains an expected pattern.
-    ///
-    /// Returns `true` if `expected` is found as a substring.
-    fn expect_response(&self, expected: &[u8]) -> bool {
-        if self.rx_pos < expected.len() {
-            return false;
-        }
-        // Linear search for substring
-        for i in 0..=(self.rx_pos - expected.len()) {
-            if self.rx_buf[i..i + expected.len()] == *expected {
-                return true;
-            }
-        }
-        false
-    }
-
-    /// Parse the AT response buffer for known response patterns.
-    ///
-    /// Called whenever a complete line (terminated by \r\n) is detected.
-    fn parse_response(&mut self) {
-        let buf = &self.rx_buf[..self.rx_pos];
-
-        // Check for final response codes
-        if contains_subsequence(buf, RESP_OK) {
-            self.last_response_ok = true;
-            self.awaiting_response = false;
-
-            // Check if NETOPEN succeeded
-            if self.state == CellularState::DataConnecting {
-                self.state = CellularState::DataConnected;
-                self.info.state = CellularState::DataConnected;
-                log::info!("SIM7600: data connected");
-            }
-        } else if contains_subsequence(buf, RESP_ERROR) {
-            self.last_response_ok = false;
-            self.awaiting_response = false;
-            log::warn!("SIM7600: AT error response");
-        }
-
-        // Parse informational responses
-        self.parse_info_responses(buf);
-    }
-
-    /// Parse informational / query responses from the buffer.
-    fn parse_info_responses(&mut self, buf: &[u8]) {
-        // +CSQ: <rssi>,<ber>
-        if let Some(pos) = find_subsequence(buf, b"+CSQ: ") {
-            let start = pos + 6;
-            if let Some((rssi, ber)) = self.parse_csq(&buf[start..]) {
-                // Convert RSSI code to dBm: -113 + 2*rssi
-                self.info.rssi_dbm = if rssi == 99 {
-                    0 // Unknown
-                } else {
-                    (-113i16 + 2 * rssi as i16) as i8
-                };
-                self.info.ber = ber;
-            }
-        }
-
-        // +CREG: <n>,<stat>
-        if let Some(pos) = find_subsequence(buf, b"+CREG: ") {
-            let start = pos + 7;
-            if let Some(stat) = self.parse_creg(&buf[start..]) {
-                self.info.registration_status = stat;
-                let reg = RegistrationStatus::from(stat);
-                if reg == RegistrationStatus::RegisteredHome
-                    || reg == RegistrationStatus::RegisteredRoaming
-                {
-                    if self.state == CellularState::Registering
-                        || self.state == CellularState::SimCheck
-                    {
-                        self.state = CellularState::Registered;
-                        self.info.state = CellularState::Registered;
-                        log::info!("SIM7600: registered on network");
-                    }
-                }
-            }
-        }
-
-        // +CGREG: <n>,<stat>
-        if let Some(pos) = find_subsequence(buf, b"+CGREG: ") {
-            let start = pos + 8;
-            if let Some(_stat) = self.parse_creg(&buf[start..]) {
-                // GPRS registration tracked separately if needed
-            }
-        }
-
-        // +CPIN: READY
-        if contains_subsequence(buf, RESP_CPIN_READY) {
-            log::info!("SIM7600: SIM card ready");
-        }
-
-        // IMEI response (numeric line after AT+CGSN)
-        if self.info.imei.is_empty() && buf.len() >= 15 {
-            if let Some(imei) = self.try_parse_imei(buf) {
-                self.info.imei = imei;
-            }
-        }
-
-        // +COPS: <mode>,<format>,"<operator>"
-        if let Some(pos) = find_subsequence(buf, b"+COPS: ") {
-            self.parse_cops(&buf[pos + 7..]);
-        }
-
-        // +IPADDR: <ip>
-        if let Some(pos) = find_subsequence(buf, b"+IPADDR: ") {
-            self.parse_ipaddr(&buf[pos + 9..]);
-        }
-    }
-
-    /// Process a single byte received from the UART.
-    ///
-    /// Bytes are accumulated in the rx_buf. When a complete line (\n) is
-    /// detected, the response is parsed. URCs are detected and dispatched.
-    pub fn on_byte_received(&mut self, byte: u8) {
-        if self.rx_pos < RX_BUF_SIZE {
-            self.rx_buf[self.rx_pos] = byte;
-            self.rx_pos += 1;
-        }
-
-        // Parse on newline
-        if byte == b'\n' {
-            // Check for URCs first
-            if let Some(urc) = self.detect_urc() {
-                self.handle_urc(urc);
-            }
-
-            // Parse response if awaiting one
-            if self.awaiting_response {
-                self.parse_response();
-            }
-
-            // If response is complete, reset buffer for next command
-            if !self.awaiting_response {
-                self.rx_pos = 0;
-            }
-        }
-    }
-
-    // =========================================================================
-    // URC (Unsolicited Result Code) handling
-    // =========================================================================
-
-    /// Detect a URC in the current receive buffer line.
-    fn detect_urc(&self) -> Option<Urc> {
-        let buf = &self.rx_buf[..self.rx_pos];
-
-        if contains_subsequence(buf, b"RING") {
-            return Some(Urc::Ring);
-        }
-
-        if let Some(pos) = find_subsequence(buf, b"+CREG: ") {
-            let start = pos + 7;
-            // URC format: +CREG: <stat> (single digit, no <n> prefix)
-            if start < buf.len() {
-                let stat = buf[start].wrapping_sub(b'0');
-                if stat <= 5 {
-                    return Some(Urc::Creg(stat));
-                }
-            }
-        }
-
-        if let Some(pos) = find_subsequence(buf, b"+CGREG: ") {
-            let start = pos + 8;
-            if start < buf.len() {
-                let stat = buf[start].wrapping_sub(b'0');
-                if stat <= 5 {
-                    return Some(Urc::Cgreg(stat));
-                }
-            }
-        }
-
-        if let Some(pos) = find_subsequence(buf, b"+CIPCLOSE: ") {
-            let start = pos + 11;
-            if start < buf.len() {
-                let link = buf[start].wrapping_sub(b'0');
-                return Some(Urc::CipClose(link));
-            }
-        }
-
-        None
-    }
-
-    /// Handle a detected URC.
-    fn handle_urc(&mut self, urc: Urc) {
-        match urc {
-            Urc::Creg(stat) => {
-                self.info.registration_status = stat;
-                let reg = RegistrationStatus::from(stat);
-                log::info!("SIM7600: URC CREG={} ({:?})", stat, reg);
-
-                if reg == RegistrationStatus::RegisteredHome
-                    || reg == RegistrationStatus::RegisteredRoaming
-                {
-                    if self.state == CellularState::Registering {
-                        self.state = CellularState::Registered;
-                        self.info.state = CellularState::Registered;
-                    }
-                } else if reg == RegistrationStatus::NotRegistered
-                    || reg == RegistrationStatus::Denied
-                {
-                    if self.state == CellularState::Registered
-                        || self.state == CellularState::DataConnected
-                    {
-                        self.state = CellularState::Registering;
-                        self.info.state = CellularState::Registering;
-                    }
-                }
-            }
-            Urc::Cgreg(stat) => {
-                log::debug!("SIM7600: URC CGREG={}", stat);
-            }
-            Urc::Ring => {
-                log::info!("SIM7600: incoming call (RING)");
-                // Auto-hang-up: not handling voice calls
-            }
-            Urc::CipClose(link) => {
-                log::info!("SIM7600: connection {} closed by remote", link);
-            }
-            Urc::CipRxGet(link, len) => {
-                log::debug!("SIM7600: data available on link {}, {} bytes", link, len);
-            }
-            Urc::Unknown => {}
-        }
-    }
-
-    // =========================================================================
-    // Response parsers
-    // =========================================================================
-
-    /// Parse +CSQ response: <rssi>,<ber>
-    fn parse_csq(&self, data: &[u8]) -> Option<(u8, u8)> {
-        let mut rssi: u8 = 0;
-        let mut ber: u8 = 0;
-        let mut pos = 0;
-        let mut parsing_ber = false;
-
-        while pos < data.len() {
-            let ch = data[pos];
-            if ch == b',' {
-                parsing_ber = true;
-                pos += 1;
-                continue;
-            }
-            if ch == b'\r' || ch == b'\n' {
-                break;
-            }
-            if ch >= b'0' && ch <= b'9' {
-                if parsing_ber {
-                    ber = ber.wrapping_mul(10).wrapping_add(ch - b'0');
-                } else {
-                    rssi = rssi.wrapping_mul(10).wrapping_add(ch - b'0');
-                }
-            }
-            pos += 1;
-        }
-
-        Some((rssi, ber))
-    }
-
-    /// Parse +CREG/+CGREG response. Handles both:
-    /// - Query response: <n>,<stat>
-    /// - URC format: <stat>
-    fn parse_creg(&self, data: &[u8]) -> Option<u8> {
-        // Skip <n>, if present (look for comma)
-        let mut pos = 0;
-        while pos < data.len() && data[pos] != b'\r' && data[pos] != b'\n' {
-            if data[pos] == b',' {
-                pos += 1;
-                break;
-            }
-            pos += 1;
-        }
-
-        // If no comma found, reset to start (URC format)
-        if pos >= data.len() || data[pos.wrapping_sub(1)] != b',' {
-            pos = 0;
-        }
-
-        // Parse stat digit
-        if pos < data.len() && data[pos] >= b'0' && data[pos] <= b'9' {
-            Some(data[pos] - b'0')
+    /// Send an AT command and expect an OK response within `timeout_ms`.
+    fn send_at_ok(&mut self, cmd: &[u8], timeout_ms: u32) -> Result<()> {
+        self.send_at(cmd)?;
+        self.wait_response(timeout_ms)?;
+        if self.last_response_ok {
+            Ok(())
         } else {
-            None
+            Err(Error::CellularInitFailed)
         }
     }
 
-    /// Try to parse an IMEI from a buffer line (15 digits).
-    fn try_parse_imei(&self, buf: &[u8]) -> Option<String<16>> {
-        // Find a run of 15 digits
-        let mut start = None;
-        let mut count = 0u8;
+    /// Send an AT command and return the full response buffer contents.
+    fn send_at_response(
+        &mut self,
+        cmd: &[u8],
+        timeout_ms: u32,
+    ) -> Result<[u8; RX_BUF_SIZE]> {
+        self.send_at(cmd)?;
+        let _ = self.wait_response(timeout_ms);
 
-        for (i, &ch) in buf.iter().enumerate() {
-            if ch >= b'0' && ch <= b'9' {
-                if start.is_none() {
-                    start = Some(i);
-                }
-                count += 1;
-                if count == 15 {
-                    let s = start.unwrap();
-                    let mut imei = String::new();
-                    for &digit in &buf[s..s + 15] {
-                        let _ = imei.push(digit as char);
-                    }
-                    return Some(imei);
-                }
-            } else {
-                start = None;
-                count = 0;
-            }
-        }
-        None
+        let mut response = [0u8; RX_BUF_SIZE];
+        let len = self.rx_pos.min(RX_BUF_SIZE);
+        response[..len].copy_from_slice(&self.rx_buf[..len]);
+        Ok(response)
     }
 
-    /// Parse +COPS response to extract operator name.
-    fn parse_cops(&mut self, data: &[u8]) {
-        // Format: <mode>,<format>,"<operator_name>"
-        // Find opening quote
-        let mut i = 0;
-        while i < data.len() && data[i] != b'"' {
-            i += 1;
-        }
-        i += 1; // skip opening quote
+    // =======================================================================
+    // Private: UART helpers
+    // =======================================================================
 
-        let start = i;
-        while i < data.len() && data[i] != b'"' {
-            i += 1;
-        }
-
-        if i > start {
-            self.info.operator.clear();
-            for &ch in &data[start..i] {
-                let _ = self.info.operator.push(ch as char);
-            }
-        }
-    }
-
-    /// Parse +IPADDR response to extract IP address.
-    fn parse_ipaddr(&mut self, data: &[u8]) {
-        let mut octets = [0u8; 4];
-        let mut octet_idx = 0;
-        let mut current: u16 = 0;
-
-        for &ch in data {
-            if ch == b'.' || ch == b'\r' || ch == b'\n' {
-                if octet_idx < 4 {
-                    octets[octet_idx] = current as u8;
-                    octet_idx += 1;
-                }
-                current = 0;
-                if ch != b'.' {
-                    break;
-                }
-            } else if ch >= b'0' && ch <= b'9' {
-                current = current * 10 + (ch - b'0') as u16;
-            }
-        }
-        // Handle last octet if no trailing newline
-        if octet_idx == 3 {
-            octets[3] = current as u8;
-            octet_idx = 4;
-        }
-
-        if octet_idx == 4 {
-            self.info.ip_addr = octets;
-        }
-    }
-
-    // =========================================================================
-    // UART helpers
-    // =========================================================================
-
-    /// Drain all available bytes from the UART into the receive buffer.
-    fn drain_uart(&mut self) {
-        loop {
-            match self.uart.read() {
-                Ok(byte) => {
-                    self.on_byte_received(byte);
-                }
-                Err(nb::Error::WouldBlock) => break,
-                Err(nb::Error::Other(_)) => break,
-            }
-        }
-    }
-
-    /// Write a single byte to the UART.
+    /// Write a single byte to the UART, blocking until the TX register
+    /// is ready or a retry limit is reached.
     fn uart_write_byte(&mut self, byte: u8) -> Result<()> {
-        // Blocking write with timeout
         for _ in 0..10_000 {
             match self.uart.write(byte) {
                 Ok(()) => return Ok(()),
@@ -1145,66 +878,298 @@ where
                     continue;
                 }
                 Err(nb::Error::Other(_)) => {
-                    return Err(Error::SpiBusError);
+                    return Err(Error::CellularTxFailed);
                 }
             }
         }
-        Err(Error::SpiTimeout)
+        Err(Error::CellularTimeout)
     }
 
-    /// Check if the STATUS pin is high (module is powered on).
+    /// Drain all available bytes from the UART into the receive buffer.
+    fn drain_uart(&mut self) {
+        loop {
+            match self.uart.read() {
+                Ok(byte) => {
+                    if self.rx_pos < RX_BUF_SIZE {
+                        self.rx_buf[self.rx_pos] = byte;
+                        self.rx_pos += 1;
+                    }
+                }
+                Err(nb::Error::WouldBlock) => break,
+                Err(nb::Error::Other(_)) => break,
+            }
+        }
+    }
+
+    /// Feed a single byte from the UART interrupt handler.
+    pub fn on_byte_received(&mut self, byte: u8) {
+        if self.rx_pos < RX_BUF_SIZE {
+            self.rx_buf[self.rx_pos] = byte;
+            self.rx_pos += 1;
+        }
+    }
+
+    /// Check if the STATUS pin reads high (module is powered on).
     fn is_status_high(&self) -> bool {
         self.status.is_high().unwrap_or(false)
     }
 
-    // =========================================================================
-    // TX buffer helpers (for building AT commands with parameters)
-    // =========================================================================
+    // =======================================================================
+    // Private: URC processing
+    // =======================================================================
 
-    /// Small internal transmit staging buffer.
-    /// We reuse the lower portion of rx_buf temporarily during TX construction.
-    /// This avoids an extra buffer allocation.
+    /// Scan the receive buffer for unsolicited result codes and update
+    /// internal state accordingly.
+    fn process_urcs(&mut self) {
+        let buf = &self.rx_buf[..self.rx_pos];
 
-    fn tx_buf_clear(&mut self) {
-        // No-op: we write directly to UART in tx_flush
-        self.rx_pos = 0;
-    }
-
-    fn tx_write(&mut self, data: &[u8]) {
-        let space = RX_BUF_SIZE - self.rx_pos;
-        let len = data.len().min(space);
-        self.rx_buf[self.rx_pos..self.rx_pos + len].copy_from_slice(&data[..len]);
-        self.rx_pos += len;
-    }
-
-    fn tx_write_u8(&mut self, val: u8) {
-        let mut buf = [0u8; 3];
-        let len = fmt_u8(val, &mut buf);
-        self.tx_write(&buf[..len]);
-    }
-
-    fn tx_write_u16(&mut self, val: u16) {
-        let mut buf = [0u8; 5];
-        let len = fmt_u16(val, &mut buf);
-        self.tx_write(&buf[..len]);
-    }
-
-    fn tx_flush(&mut self) -> Result<()> {
-        for i in 0..self.rx_pos {
-            self.uart_write_byte(self.rx_buf[i])?;
+        // +CREG: <stat> (URC — single digit, no <n> prefix)
+        if let Some(pos) = find_subsequence(buf, b"+CREG: ") {
+            let start = pos + 7;
+            if start < buf.len() {
+                let stat = buf[start].wrapping_sub(b'0');
+                if stat <= 5 {
+                    let reg = RegistrationStatus::from(stat);
+                    match reg {
+                        RegistrationStatus::RegisteredHome
+                        | RegistrationStatus::RegisteredRoaming => {
+                            if self.state == CellularState::Searching {
+                                self.state = CellularState::Registered;
+                                self.info.state = CellularState::Registered;
+                                log::info!("SIM7600: URC registered (CREG={})", stat);
+                            }
+                        }
+                        RegistrationStatus::NotRegistered | RegistrationStatus::Denied => {
+                            if self.state == CellularState::Registered
+                                || self.state == CellularState::DataConnected
+                            {
+                                self.state = CellularState::Searching;
+                                self.info.state = CellularState::Searching;
+                                self.socket_connected = false;
+                                log::warn!("SIM7600: URC lost registration (CREG={})", stat);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
         }
-        self.rx_pos = 0;
-        self.awaiting_response = true;
-        self.last_response_ok = false;
-        Ok(())
+
+        // +CEREG: <stat>
+        if let Some(pos) = find_subsequence(buf, b"+CEREG: ") {
+            let start = pos + 8;
+            if start < buf.len() {
+                let stat = buf[start].wrapping_sub(b'0');
+                if stat <= 5 {
+                    let reg = RegistrationStatus::from(stat);
+                    if (reg == RegistrationStatus::RegisteredHome
+                        || reg == RegistrationStatus::RegisteredRoaming)
+                        && self.state == CellularState::Searching
+                    {
+                        self.state = CellularState::Registered;
+                        self.info.state = CellularState::Registered;
+                        log::info!("SIM7600: URC LTE registered (CEREG={})", stat);
+                    }
+                }
+            }
+        }
+
+        // +CIPCLOSE: <link>,<reason> — remote closed the connection
+        if find_subsequence(buf, b"+CIPCLOSE:").is_some() {
+            self.socket_connected = false;
+            log::info!("SIM7600: URC socket closed by remote");
+        }
+    }
+
+    // =======================================================================
+    // Private: response parsers
+    // =======================================================================
+
+    /// Parse a +CSQ response to extract RSSI and BER.
+    ///
+    /// Response format: `+CSQ: <rssi>,<ber>`
+    /// RSSI code 0-31 maps to -113..-51 dBm; 99 = unknown.
+    fn parse_csq(&mut self, data: &[u8]) {
+        if let Some(pos) = find_subsequence(data, b"+CSQ: ") {
+            let start = pos + 6;
+            let mut rssi: u8 = 0;
+            let mut ber: u8 = 0;
+            let mut i = start;
+            let mut parsing_ber = false;
+
+            while i < data.len() {
+                let ch = data[i];
+                if ch == b',' {
+                    parsing_ber = true;
+                    i += 1;
+                    continue;
+                }
+                if ch == b'\r' || ch == b'\n' {
+                    break;
+                }
+                if ch >= b'0' && ch <= b'9' {
+                    if parsing_ber {
+                        ber = ber.wrapping_mul(10).wrapping_add(ch - b'0');
+                    } else {
+                        rssi = rssi.wrapping_mul(10).wrapping_add(ch - b'0');
+                    }
+                }
+                i += 1;
+            }
+
+            self.info.signal.rssi_dbm = if rssi == 99 {
+                0
+            } else {
+                -113 + 2 * rssi as i16
+            };
+            self.info.signal.ber = ber;
+        }
+    }
+
+    /// Parse a +CESQ response to extract LTE RSRP and RSRQ.
+    ///
+    /// Response format: `+CESQ: <rxlev>,<ber>,<rscp>,<ecno>,<rsrq>,<rsrp>`
+    fn parse_cesq(&mut self, data: &[u8]) {
+        if let Some(pos) = find_subsequence(data, b"+CESQ: ") {
+            let start = pos + 7;
+            let mut fields = [0u8; 6];
+            let mut field_idx = 0;
+            let mut i = start;
+
+            while i < data.len() && field_idx < 6 {
+                let ch = data[i];
+                if ch == b',' || ch == b'\r' || ch == b'\n' {
+                    field_idx += 1;
+                    if ch != b',' {
+                        break;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if ch >= b'0' && ch <= b'9' {
+                    fields[field_idx] =
+                        fields[field_idx].wrapping_mul(10).wrapping_add(ch - b'0');
+                }
+                i += 1;
+            }
+
+            // RSRQ: index 4, maps to -19.5 + 0.5 * val dB (we store as integer)
+            if fields[4] != 255 {
+                self.info.signal.rsrq = -20 + fields[4] as i16;
+            }
+            // RSRP: index 5, maps to -140 + val dBm
+            if fields[5] != 255 {
+                self.info.signal.rsrp = -140 + fields[5] as i16;
+            }
+        }
+    }
+
+    /// Parse a +IPADDR response to extract the assigned IP address.
+    fn parse_ipaddr(&mut self, data: &[u8]) {
+        if let Some(pos) = find_subsequence(data, b"+IPADDR: ") {
+            let start = pos + 9;
+            let mut octets = [0u8; 4];
+            let mut octet_idx = 0;
+            let mut current: u16 = 0;
+
+            for &ch in &data[start..] {
+                if ch == b'.' || ch == b'\r' || ch == b'\n' {
+                    if octet_idx < 4 {
+                        octets[octet_idx] = current as u8;
+                        octet_idx += 1;
+                    }
+                    current = 0;
+                    if ch != b'.' {
+                        break;
+                    }
+                } else if ch >= b'0' && ch <= b'9' {
+                    current = current * 10 + (ch - b'0') as u16;
+                }
+            }
+
+            if octet_idx == 3 {
+                octets[3] = current as u8;
+                octet_idx = 4;
+            }
+
+            if octet_idx == 4 {
+                self.info.ip_addr = octets;
+            }
+        }
+    }
+
+    // =======================================================================
+    // Private: query helpers
+    // =======================================================================
+
+    /// Query the operator name from AT+COPS?.
+    fn query_operator(&mut self) {
+        if let Ok(resp) = self.send_at_response(AT_COPS, AT_DEFAULT_TIMEOUT_MS) {
+            if let Some(pos) = find_subsequence(&resp, b"+COPS: ") {
+                let data = &resp[pos + 7..];
+                // Format: <mode>,<format>,"<operator_name>"
+                let mut i = 0;
+                while i < data.len() && data[i] != b'"' {
+                    i += 1;
+                }
+                i += 1; // skip opening quote
+                let start = i;
+                while i < data.len() && data[i] != b'"' {
+                    i += 1;
+                }
+                if i > start {
+                    self.info.operator.clear();
+                    for &ch in &data[start..i] {
+                        let _ = self.info.operator.push(ch as char);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Refresh cached signal quality metrics.
+    fn refresh_signal_quality(&mut self) {
+        // Basic RSSI/BER
+        if let Ok(resp) = self.send_at_response(AT_CSQ, AT_DEFAULT_TIMEOUT_MS) {
+            self.parse_csq(&resp);
+        }
+
+        // LTE-specific RSRP/RSRQ
+        if let Ok(resp) = self.send_at_response(AT_CESQ, AT_DEFAULT_TIMEOUT_MS) {
+            self.parse_cesq(&resp);
+        }
+    }
+
+    /// Query the current network type via AT+CPSI?.
+    ///
+    /// Parses the system info response to determine if the module is
+    /// connected via LTE (4G), WCDMA/HSDPA (3G), or GSM (2G).
+    fn query_network_type(&mut self) {
+        if let Ok(resp) = self.send_at_response(AT_CPSI, AT_DEFAULT_TIMEOUT_MS) {
+            self.info.network_type.clear();
+            if contains_subsequence(&resp, b"LTE") {
+                let _ = self.info.network_type.push_str("4G");
+            } else if contains_subsequence(&resp, b"WCDMA")
+                || contains_subsequence(&resp, b"HSDPA")
+                || contains_subsequence(&resp, b"HSPA")
+            {
+                let _ = self.info.network_type.push_str("3G");
+            } else if contains_subsequence(&resp, b"GSM")
+                || contains_subsequence(&resp, b"EDGE")
+                || contains_subsequence(&resp, b"GPRS")
+            {
+                let _ = self.info.network_type.push_str("2G");
+            }
+        }
     }
 }
 
-// =============================================================================
-// Utility functions
-// =============================================================================
+// ===========================================================================
+// Free-standing utility functions
+// ===========================================================================
 
-/// Busy-wait delay (placeholder for timer-based delay in production).
+/// Busy-wait delay (cycle count, not calibrated — placeholder for
+/// timer-based delay in production firmware).
 #[inline(always)]
 fn spin_delay(cycles: u32) {
     for _ in 0..cycles {
@@ -1212,12 +1177,12 @@ fn spin_delay(cycles: u32) {
     }
 }
 
-/// Check if `haystack` contains `needle` as a subsequence.
+/// Check if `haystack` contains `needle` as a contiguous subsequence.
 fn contains_subsequence(haystack: &[u8], needle: &[u8]) -> bool {
     find_subsequence(haystack, needle).is_some()
 }
 
-/// Find the position of `needle` in `haystack`.
+/// Find the byte offset of `needle` within `haystack`, or `None`.
 fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     if needle.is_empty() {
         return Some(0);
@@ -1233,26 +1198,88 @@ fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     None
 }
 
-/// Format a u8 as decimal ASCII into `buf`. Returns number of bytes written.
-fn fmt_u8(mut val: u8, buf: &mut [u8; 3]) -> usize {
-    if val == 0 {
-        buf[0] = b'0';
-        return 1;
+/// Parse a registration response (`+CREG:` or `+CEREG:`) to extract the
+/// status digit.  Handles both query form `<n>,<stat>` and URC form `<stat>`.
+fn parse_registration_response(buf: &[u8]) -> Option<RegistrationStatus> {
+    // Look for "+CREG: " or "+CEREG: "
+    let start = if let Some(pos) = find_subsequence(buf, b"+CREG: ") {
+        pos + 7
+    } else if let Some(pos) = find_subsequence(buf, b"+CEREG: ") {
+        pos + 8
+    } else {
+        return None;
+    };
+
+    // Skip <n>, if present (find first comma after the prefix)
+    let data = &buf[start..];
+    let mut i = 0;
+    let mut found_comma = false;
+    while i < data.len() && data[i] != b'\r' && data[i] != b'\n' {
+        if data[i] == b',' {
+            found_comma = true;
+            i += 1;
+            break;
+        }
+        i += 1;
     }
-    let mut pos = 0;
-    let mut tmp = [0u8; 3];
-    while val > 0 {
-        tmp[pos] = b'0' + (val % 10);
-        val /= 10;
-        pos += 1;
+
+    let stat_pos = if found_comma { i } else { 0 };
+    if stat_pos < data.len() && data[stat_pos] >= b'0' && data[stat_pos] <= b'9' {
+        Some(RegistrationStatus::from(data[stat_pos] - b'0'))
+    } else {
+        None
     }
-    for i in 0..pos {
-        buf[i] = tmp[pos - 1 - i];
-    }
-    pos
 }
 
-/// Format a u16 as decimal ASCII into `buf`. Returns number of bytes written.
+/// Try to extract a string of exactly `min_len` consecutive digits from
+/// a byte buffer. Returns a heapless `String<24>` on success.
+fn parse_digit_string<const N: usize>(buf: &[u8], min_len: usize) -> Option<String<N>> {
+    let mut start = None;
+    let mut count: usize = 0;
+
+    for (i, &ch) in buf.iter().enumerate() {
+        if ch >= b'0' && ch <= b'9' {
+            if start.is_none() {
+                start = Some(i);
+            }
+            count += 1;
+            if count >= min_len {
+                let s = start.unwrap();
+                let mut result: String<N> = String::new();
+                for &digit in &buf[s..s + count] {
+                    if result.push(digit as char).is_err() {
+                        return None;
+                    }
+                }
+                return Some(result);
+            }
+        } else {
+            start = None;
+            count = 0;
+        }
+    }
+    None
+}
+
+/// Copy `src` bytes into `dst` starting at `offset`. Returns the number
+/// of bytes written.
+fn copy_to_buf(dst: &mut [u8], offset: usize, src: &[u8]) -> usize {
+    let space = dst.len().saturating_sub(offset);
+    let len = src.len().min(space);
+    dst[offset..offset + len].copy_from_slice(&src[..len]);
+    len
+}
+
+/// Write a `u16` value as decimal ASCII into `dst` at `offset`.
+/// Returns the number of bytes written.
+fn copy_u16_ascii(dst: &mut [u8], offset: usize, val: u16) -> usize {
+    let mut buf = [0u8; 5];
+    let len = fmt_u16(val, &mut buf);
+    copy_to_buf(dst, offset, &buf[..len])
+}
+
+/// Format a `u16` as decimal ASCII into a fixed buffer. Returns the
+/// number of bytes written (1-5).
 fn fmt_u16(mut val: u16, buf: &mut [u8; 5]) -> usize {
     if val == 0 {
         buf[0] = b'0';
