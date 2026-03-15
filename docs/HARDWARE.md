@@ -20,6 +20,9 @@
 | 14 | Pull-up resistors | — | 4 | — | 4.7kΩ for I2C |
 | 15 | Decoupling caps | — | 6 | — | 100nF ceramic |
 | 16 | Voltage divider resistors | — | 2 | — | 100kΩ + 100kΩ for batt |
+| 17 | Micro-SD card holder | Molex 5031821852 | 1 | SPI2 | Push-push, CS=PD10, DET=PD11 |
+| 18 | SD card decoupling cap | — | 1 | — | 100nF on VCC |
+| 19 | SD card detect pull-up | — | 1 | — | 10kΩ pull-up on PD11 |
 
 ## 2. Pin Mapping
 
@@ -75,6 +78,10 @@ Status LEDs:
   PD1  ──── LED  ──── Error (red)
   PD2  ──── LED  ──── SCADA (amber)
 
+SD Card (SPI2 shared bus, optional):
+  PD10 ──── CS   ──── SD card CS (active low)
+  PD11 ──── DET  ──── SD card detect (active low = inserted)
+
 Mode DIP Switch:
   PE0  ──── DIP0 ──── Mode bit 0
   PE1  ──── DIP1 ──── Mode bit 1
@@ -123,6 +130,9 @@ All four devices on a single I2C bus at 400 kHz (fast mode).
                         │                                      │  │
                         │  PB3-PB5 ──► ATWINC1500 WiFi (SPI3) │  │
                         │  PB10-PB11 ► RN4870 BLE (USART3)    │  │
+                        │  PB12-PB15 ► SPI2 (W5500 + SD Card) │  │
+                        │  PD10 ─────► SD Card CS              │  │
+                        │  PD11 ◄────  SD Card Detect          │  │
                         │                                      │  │
                         └──────────────────────────────────────────┘
 
@@ -145,7 +155,8 @@ Power Supply:
 | BH1750 | 0.12 | 0.01 |
 | SX1276 (TX) | 120 | 0.2 |
 | SX1276 (RX) | 12 | 0.2 |
-| **Total (active)** | **~250 mA** | — |
+| Micro-SD Card (write) | 100 | 0.2 |
+| **Total (active)** | **~350 mA** | — |
 | **Total (standby)** | — | **~18 µA** |
 
 ## 6. PCB Design Notes

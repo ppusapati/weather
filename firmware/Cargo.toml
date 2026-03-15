@@ -7,7 +7,7 @@ description = "STM32F407 Weather Station Firmware — Single-MCU Industrial Arch
 
 [dependencies]
 # STM32F4 HAL
-stm32f4xx-hal = { version = "0.21", features = ["stm32f407", "rt"] }
+stm32f4xx-hal = { version = "0.21", features = ["stm32f407"] }
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
 panic-halt = "1.0"
@@ -35,6 +35,10 @@ defmt-rtt = "0.4"
 # No-std compatible utilities
 heapless = "0.8"
 
+# SD card (FAT32 via SPI)
+embedded-sdmmc = { version = "0.8", optional = true }
+embedded-hal-bus = { version = "0.2", optional = true }
+
 # Math (for libm functions in no_std)
 libm = "0.2"
 
@@ -48,9 +52,10 @@ solar = []
 india = []
 cellular = []
 ethernet = []
+sdcard = ["embedded-sdmmc", "embedded-hal-bus"]
 all-industries = ["agriculture", "solar", "india"]
-all-comms = ["cellular", "ethernet"]
-full-system = ["agriculture", "solar", "india", "cellular", "ethernet"]
+all-comms = ["cellular", "ethernet", "sdcard"]
+full-system = ["agriculture", "solar", "india", "cellular", "ethernet", "sdcard"]
 
 [profile.dev]
 opt-level = "s"

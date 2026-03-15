@@ -454,6 +454,32 @@ pub const CELLULAR_POLL_INTERVAL_MS: u64 = 500;
 #[cfg(feature = "ethernet")]
 pub const ETHERNET_POLL_INTERVAL_MS: u64 = 100;
 
+// ---------- SD Card (SPI2 shared bus) ----------
+
+/// SD card chip select pin (active low).
+#[cfg(feature = "sdcard")]
+pub const SD_CS_PIN: &str = "PD10";
+
+/// SD card detect pin (active low = card inserted).
+#[cfg(feature = "sdcard")]
+pub const SD_DETECT_PIN: &str = "PD11";
+
+/// SPI clock for SD card initialization (400 kHz for card detect).
+#[cfg(feature = "sdcard")]
+pub const SD_SPI_INIT_CLOCK_HZ: u32 = 400_000;
+
+/// SPI clock for SD card normal operation (25 MHz max).
+#[cfg(feature = "sdcard")]
+pub const SD_SPI_CLOCK_HZ: u32 = 25_000_000;
+
+/// Interval to flush SD card write buffer (ms).
+#[cfg(feature = "sdcard")]
+pub const SD_FLUSH_INTERVAL_MS: u64 = 60_000;
+
+/// Directory name for weather log files on the SD card.
+#[cfg(feature = "sdcard")]
+pub const SD_LOG_DIR: &str = "weather";
+
 // ---------- Firmware Info ----------
 
 pub const FIRMWARE_VERSION: &str = env!("CARGO_PKG_VERSION");

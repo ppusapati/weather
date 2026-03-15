@@ -39,6 +39,29 @@
 - **Check**: SI1145 coefficient registers — must be written during init
 - **Check**: Sensor orientation (must face upward, no obstruction)
 
+## SD Card Issues
+
+### SD card not detected
+- **Symptom**: "No SD card inserted" in log, firmware falls back to flash storage
+- **Check**: Card is fully inserted into micro-SD holder (J22)
+- **Check**: PD11 detect pin — should go LOW when card is inserted
+- **Check**: R27 (10kΩ pull-up) on PD11 is populated
+- **Check**: Card is FAT32 formatted (SDXC cards with exFAT are not supported)
+
+### SD card init fails
+- **Symptom**: "SD card init failed" in log
+- **Check**: SPI2 bus connections (PB13 SCK, PB14 MISO, PB15 MOSI, PD10 CS)
+- **Check**: C38 (100nF) decoupling cap on SD card VCC
+- **Check**: Card is not write-protected
+- **Note**: Init uses 400 kHz SPI clock; if SPI2 bus is noisy, check signal integrity
+
+### SD card write errors
+- **Symptom**: "SD store failed" in log, data falls back to flash
+- **Check**: Card has free space (FAT32 max 32 GB partition)
+- **Check**: `/weather/` directory exists (created automatically on init)
+- **Check**: SPI2 bus sharing with W5500 — verify CS toggling is correct
+- **Recovery**: Remove card, format as FAT32, re-insert
+
 ## Communication Issues
 
 ### WiFi won't connect

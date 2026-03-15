@@ -207,6 +207,30 @@ fn main() -> ! {
         log::error!("Flash storage init failed: {} — data will not persist", e);
     }
 
+    // ── Phase 5a: SD Card Storage ──────────────────────────────
+
+    #[cfg(feature = "sdcard")]
+    let (mut sd_driver, mut sd_storage) = {
+        log::info!("SD card module enabled (SPI2, CS=PD10)");
+        let mut driver = drivers::sdcard::SdCardDriver::new();
+        let mut storage = storage::sdcard::SdCardStorage::new();
+        // In real firmware, is_inserted() reads PD11 GPIO;
+        // for development, simulate card present
+        driver.set_inserted(true);
+        if driver.is_inserted() {
+            if let Err(e) = driver.init() {
+                log::warn!("SD card init failed: {}", e);
+            } else if let Err(e) = storage.init(&mut driver) {
+                log::warn!("SD card filesystem init failed: {}", e);
+            } else {
+                log::info!("SD card ready: {} MB", driver.capacity_mb());
+            }
+        } else {
+            log::info!("No SD card inserted — using flash storage only");
+        }
+        (driver, storage)
+    };
+
     let mut reading_buffer: RingBuffer<WeatherReading, 64> = RingBuffer::new();
     let mut latest_reading = WeatherReading::default();
     let raw_data = RawSensorData::default();
@@ -307,8 +331,23 @@ fn main() -> ! {
                         log::warn!("Reading buffer full — dropping oldest");
                     }
 
-                    if let Err(e) = flash_storage.store(&latest_reading) {
-                        log::warn!("Flash store failed: {}", e);
+                    // Store to SD card (primary) with flash fallback
+                    #[cfg(feature = "sdcard")]
+                    {
+                        if sd_driver.is_inserted() {
+                            if let Err(e) = sd_storage.store(&latest_reading) {
+                                log::warn!("SD store failed: {} — falling back to flash", e);
+                                let _ = flash_storage.store(&latest_reading);
+                            }
+                        } else {
+                            let _ = flash_storage.store(&latest_reading);
+                        }
+                    }
+                    #[cfg(not(feature = "sdcard"))]
+                    {
+                        if let Err(e) = flash_storage.store(&latest_reading) {
+                            log::warn!("Flash store failed: {}", e);
+                        }
                     }
 
                     http.update_reading(&latest_reading);
@@ -564,6 +603,14 @@ fn main() -> ! {
                     // In real firmware: ethernet.poll(uptime_ms);
                     // mode_manager.report_ethernet_health(ethernet.is_linked());
                     log::debug!("Task: PollEthernet");
+                }
+
+                #[cfg(feature = "sdcard")]
+                TaskId::FlushSdCard => {
+                    if let Err(e) = sd_storage.flush(&mut sd_driver) {
+                        log::warn!("SD card flush failed: {}", e);
+                    }
+                    log::debug!("Task: FlushSdCard");
                 }
             }
         }

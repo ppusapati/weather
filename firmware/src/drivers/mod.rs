@@ -39,6 +39,8 @@ pub mod rn4870;
 pub mod w5500;
 #[cfg(feature = "cellular")]
 pub mod sim7600;
+#[cfg(feature = "sdcard")]
+pub mod sdcard;
 
 use serde::{Deserialize, Serialize};
 

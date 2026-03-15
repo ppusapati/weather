@@ -87,6 +87,32 @@
           DIO0 = TX Done / RX Done interrupt
 ```
 
+## 3b. SPI2 Bus — SD Card (Shared with W5500 Ethernet)
+
+```
+                          ┌─────────────────────┐
+                          │  Micro-SD Card (J22) │
+    PB13 (SCK)  ─────────┤ CLK  (pin 5)        │
+    PB15 (MOSI) ─────────┤ DI   (pin 2)        │
+    PB14 (MISO) ◄────────┤ DO   (pin 7)        │
+    PD10 (CS)   ─────────┤ CS   (pin 1)        │
+                          │               VCC ├───── 3.3V
+                          │               VSS ├───── GND
+                          │                CD ├────┐
+                          └─────────────────────┘    │
+                                 │                     │
+                            100nF ═  (C38)          ┌┴┐ 10kΩ (R27)
+                                 │                  │ │  pull-up
+                                GND                 └┬┘
+                                                     │
+                                              PD11 ──┘ (Card Detect)
+
+    SPI2 shared bus: W5500 (CS=PB12) + SD Card (CS=PD10)
+    Init clock: 400 kHz, Normal: 25 MHz
+    Card detect: PD11 active low (LOW = card inserted)
+    CS managed via CriticalSectionDevice (embedded-hal-bus)
+```
+
 ## 4. Pulse Input — Anemometer & Rain Gauge
 
 ```

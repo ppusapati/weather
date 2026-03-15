@@ -96,7 +96,8 @@ The firmware supports optional industry-specific extensions via Cargo features:
 | `all-industries` | All | All above | All above |
 | `cellular` | Remote Sites | SIM7600E-H LTE modem | Cellular uplink for remote stations |
 | `ethernet` | Industrial | W5500 wired Ethernet | Reliable wired connectivity + Modbus TCP |
-| `all-comms` | All Comms | Cellular + Ethernet | All communication channels |
+| `sdcard` | Data Logging | Micro-SD card (SPI2) | FAT32 CSV logging with daily file rotation, GB-scale storage |
+| `all-comms` | All Comms | Cellular + Ethernet + SD card | All communication + storage channels |
 | `full-system` | Everything | All sensors + all comms | All analytics + SCADA + Cloud |
 
 ### Operating Modes
@@ -125,6 +126,9 @@ cargo build --release --features cellular
 
 # Build with Ethernet support
 cargo build --release --features ethernet
+
+# Build with SD card data logging
+cargo build --release --features sdcard
 
 # Full system: all industries + all comms
 cargo build --release --features full-system

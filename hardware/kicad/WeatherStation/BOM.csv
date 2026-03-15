@@ -83,3 +83,6 @@ C29,4.7uF,Capacitor_SMD:C_0805_2012Metric,1,"RN4870 bulk decoupling",Generic,,"L
 C30,10uF,Capacitor_SMD:C_0805_2012Metric,1,"W5500 bulk decoupling",Generic,,"LCSC","0805, 16V, X5R"
 C31,100uF,Capacitor_SMD:C_1206_3216Metric,1,"SIM7600 VBAT bulk cap",Generic,,"LCSC","1206, 10V, X5R"
 C32,470uF,Capacitor_Tantalum_SMD:CP_EIA-7343-31_Kemet-D,1,"SIM7600 VBAT bulk cap (peak current)",Generic,,"LCSC","7343, 6.3V, Tantalum"
+J22,Micro_SD,Connector:MicroSD_Molex_5031821852,1,"Micro-SD Card Holder, Push-Push, -25/+85C",Molex,5031821852,Mouser,"SPI2 shared bus, CS=PD10, DET=PD11 (active low)"
+C38,100nF,Capacitor_SMD:C_0402_1005Metric,1,"SD card VCC decoupling",Generic,,"LCSC","0402, 16V, X7R"
+R27,10k,Resistor_SMD:R_0402_1005Metric,1,"SD card detect pull-up (PD11)",Generic,,"LCSC","0402, 5%, 0.1W"

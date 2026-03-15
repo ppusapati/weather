@@ -24,7 +24,7 @@ cargo build --release --features full-system
 │              1 MB Flash / 192 KB SRAM / Hardware FPU                │
 ├─────────────────────────────────────────────────────────────────────┤
 │ SPI1 ─── SX1276 LoRa (PA4-PA7, PC4, PC5)                           │
-│ SPI2 ─── W5500 Ethernet (PB12-PB15, PD3, PD4) [optional]           │
+│ SPI2 ─── W5500 Ethernet + SD Card (PB12-PB15, PD3/PD4, PD10/PD11) │
 │ SPI3 ─── ATWINC1500 WiFi (PB3-PB5, PE3-PE6)                        │
 │ USART2 ── MAX3485 RS485 Modbus (PA2, PA3, PA1)                     │
 │ USART3 ── RN4870 BLE (PB10, PB11, PD8, PD9)                       │

@@ -77,6 +77,18 @@ pub enum Error {
     FlashFull,
     NvsError,
 
+    // SD card errors
+    #[cfg(feature = "sdcard")]
+    SdCardNotInserted,
+    #[cfg(feature = "sdcard")]
+    SdCardInitFailed,
+    #[cfg(feature = "sdcard")]
+    SdCardWriteFailed,
+    #[cfg(feature = "sdcard")]
+    SdCardReadFailed,
+    #[cfg(feature = "sdcard")]
+    SdCardFull,
+
     // OTA errors
     OtaDownloadFailed,
     OtaVerifyFailed,
@@ -176,6 +188,16 @@ impl fmt::Display for Error {
             Error::FlashReadFailed => write!(f, "flash read failed"),
             Error::FlashFull => write!(f, "flash storage full"),
             Error::NvsError => write!(f, "NVS error"),
+            #[cfg(feature = "sdcard")]
+            Error::SdCardNotInserted => write!(f, "SD card not inserted"),
+            #[cfg(feature = "sdcard")]
+            Error::SdCardInitFailed => write!(f, "SD card init failed"),
+            #[cfg(feature = "sdcard")]
+            Error::SdCardWriteFailed => write!(f, "SD card write failed"),
+            #[cfg(feature = "sdcard")]
+            Error::SdCardReadFailed => write!(f, "SD card read failed"),
+            #[cfg(feature = "sdcard")]
+            Error::SdCardFull => write!(f, "SD card full"),
             Error::OtaDownloadFailed => write!(f, "OTA download failed"),
             Error::OtaVerifyFailed => write!(f, "OTA verify failed"),
             Error::OtaFlashFailed => write!(f, "OTA flash failed"),

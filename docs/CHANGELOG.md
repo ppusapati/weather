@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.1.0] - 2026-03-15
+
+### Added — SD Card Storage
+- **SD card data logging** (`--features sdcard`): micro-SD card on SPI2 shared bus (CS=PD10, DET=PD11)
+- FAT32 CSV logger with daily file rotation (`/weather/YYYY-MM-DD.csv`)
+- 512-byte sector-aligned write buffer with 60s periodic flush
+- Automatic fallback to internal flash when SD card is not inserted
+- New `FlushSdCard` scheduler task for periodic buffer flushing
+- Updated BOM with micro-SD card holder (Molex 5031821852), decoupling cap, detect pull-up
+- `sdcard` feature added to `all-comms` and `full-system` feature groups
+
 ## [2.0.0] - 2026-03-15
 
 ### Changed — Single-MCU Architecture

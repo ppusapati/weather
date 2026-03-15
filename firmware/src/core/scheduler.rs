@@ -62,6 +62,9 @@ pub enum TaskId {
     /// Poll W5500 Ethernet module for events.
     #[cfg(feature = "ethernet")]
     PollEthernet,
+    /// Flush SD card write buffer to disk.
+    #[cfg(feature = "sdcard")]
+    FlushSdCard,
 }
 
 /// A scheduled task.
@@ -80,8 +83,8 @@ pub struct ScheduledTask {
     pub last_duration_us: u32,
 }
 
-/// Maximum number of scheduled tasks (base 11 + industry 6 + scada 2 + comm polls 4).
-const MAX_TASKS: usize = 24;
+/// Maximum number of scheduled tasks (base 11 + industry 6 + scada 2 + comm polls 4 + sdcard 1).
+const MAX_TASKS: usize = 26;
 
 /// Task scheduler.
 pub struct Scheduler {
@@ -308,6 +311,18 @@ impl Scheduler {
                 id: TaskId::PollEthernet,
                 interval_ms: config::ETHERNET_POLL_INTERVAL_MS,
                 next_run_ms: 25, // offset from WiFi
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
+
+        #[cfg(feature = "sdcard")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::FlushSdCard,
+                interval_ms: config::SD_FLUSH_INTERVAL_MS,
+                next_run_ms: 30_000, // first flush 30s after boot
                 enabled: true,
                 run_count: 0,
                 last_duration_us: 0,

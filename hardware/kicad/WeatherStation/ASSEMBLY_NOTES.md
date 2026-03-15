@@ -40,6 +40,7 @@
 | RN4870-I/RM | USART3 (PB10/PB11) | BLE 5.0, integrated GATT |
 | W5500 | SPI2 (PB12-PB15) | Ethernet 10/100, 8 TCP sockets [optional] |
 | SIM7600E-H | UART4 (PC10/PC11) | LTE Cat-4 cellular, 150 Mbps [optional] |
+| Micro-SD Card | SPI2 (shared, CS=PD10) | FAT32 data logging, GB-scale storage [optional] |
 
 ### Firmware Flashing
 
@@ -155,6 +156,12 @@ Total: 1.6mm
    b. Agriculture: verify 1-Wire on GPIO16
    c. Solar: verify ADC on GPIO7, 1-Wire on GPIO16/GPIO19
    d. Solar: verify pulse input on GPIO20
+8. SD card check (if J22 populated):
+   a. Insert FAT32-formatted micro-SD card
+   b. Verify card detect (PD11 goes low)
+   c. Verify SPI2 communication at 400 kHz init, then 25 MHz normal
+   d. Verify /weather/ directory creation and CSV file write
+   e. Remove card, verify PD11 goes high and firmware falls back to flash
 ```
 
 ## Enclosure Recommendations

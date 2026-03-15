@@ -98,7 +98,7 @@
 ║  │  STM32F407VGT6 — ARM Cortex-M4F @ 168 MHz (Industrial -40/+105°C)    │ ║
 ║  │  192 KB SRAM (128 KB + 64 KB CCM) · 1 MB Flash                      │ ║
 ║  │  ATWINC1500 WiFi (SPI3) · RN4870 BLE (USART3)                       │ ║
-║  │  W5500 Ethernet (SPI2, optional) · SIM7600 Cellular (UART4, opt)    │ ║
+║  │  W5500 Ethernet + SD Card (SPI2, optional) · SIM7600 (UART4, opt)  │ ║
 ║  │  82 GPIO · 16 ADC channels · 3 I2C · 3 SPI · 4 UART                │ ║
 ║  └───────────────────────────────────────────────────────────────────────┘ ║
 ║                                                                           ║
