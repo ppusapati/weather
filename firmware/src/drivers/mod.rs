@@ -31,6 +31,12 @@ pub mod pm25;
 #[cfg(feature = "stm32")]
 pub mod stm32f407;
 
+// Communication peripherals (STM32 only)
+#[cfg(feature = "stm32")]
+pub mod w5500;
+#[cfg(feature = "stm32")]
+pub mod sim7600;
+
 use serde::{Deserialize, Serialize};
 
 /// Status of an individual sensor.

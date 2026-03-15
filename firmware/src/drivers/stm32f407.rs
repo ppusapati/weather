@@ -1,8 +1,10 @@
 /// STM32F407 hardware abstraction layer.
 ///
-/// Provides MCU-specific initialization for the STM32F407VGT6 variant
-/// of the weather station, which adds industrial SCADA connectivity
-/// via Modbus RS485 alongside the standard cloud (MQTT/HTTP) path.
+/// Provides MCU-specific initialization for the STM32F407VGT6 — the sole
+/// microcontroller in the weather station.  The STM32F407 manages all
+/// sensors, industrial SCADA connectivity (Modbus RS485), and cloud
+/// connectivity (WiFi via ATWINC1500, Ethernet via W5500, cellular via
+/// SIM7600) directly, without a secondary MCU.
 ///
 /// # STM32F407VGT6 — Industrial-Grade Specifications
 ///
@@ -42,6 +44,23 @@
 /// │   PC4 ──── RST                                             │
 /// │   PC5 ──── DIO0 (IRQ)                                      │
 /// │                                                            │
+/// │ SPI2 (W5500 Ethernet):                                     │
+/// │   PB13 ──── SCK                                            │
+/// │   PB14 ──── MISO                                           │
+/// │   PB15 ──── MOSI                                           │
+/// │   PB12 ──── NSS (CS)                                       │
+/// │   PD3 ──── RST                                             │
+/// │   PD4 ──── INT                                             │
+/// │                                                            │
+/// │ SPI3 (ATWINC1500 WiFi):                                    │
+/// │   PB3 ──── SCK                                             │
+/// │   PB4 ──── MISO                                            │
+/// │   PB5 ──── MOSI                                            │
+/// │   PE3 ──── CS                                              │
+/// │   PE4 ──── RST                                             │
+/// │   PE5 ──── IRQ                                             │
+/// │   PE6 ──── CHIP_EN                                         │
+/// │                                                            │
 /// │ USART2 (Modbus RS485):                                     │
 /// │   PA2 ──── TX → MAX3485 DI                                 │
 /// │   PA3 ──── RX ← MAX3485 RO                                 │
@@ -51,9 +70,19 @@
 /// │   PA9 ──── TX                                              │
 /// │   PA10 ──── RX                                             │
 /// │                                                            │
-/// │ USART3 (ESP32-S3 Bridge):                                  │
-/// │   PB10 ──── TX → ESP32 RX                                  │
-/// │   PB11 ──── RX ← ESP32 TX                                  │
+/// │ USART3 (RN4870 BLE):                                       │
+/// │   PB10 ──── TX → RN4870 RX                                │
+/// │   PB11 ──── RX ← RN4870 TX                                │
+/// │   PD8 ──── RST (active low)                               │
+/// │   PD9 ──── STATUS (input)                                  │
+/// │                                                            │
+/// │ UART4 (SIM7600 Cellular):                                  │
+/// │   PC10 ──── TX → SIM7600 RX                                │
+/// │   PC11 ──── RX ← SIM7600 TX                                │
+/// │   PD5 ──── PWRKEY                                          │
+/// │   PD6 ──── STATUS                                          │
+/// │   PD7 ──── RST                                             │
+/// │   PE2 ──── DTR                                             │
 /// │                                                            │
 /// │ ADC1 (Analog Sensors):                                     │
 /// │   PA0 ──── Battery voltage (divider)                       │
@@ -96,6 +125,23 @@ pub mod pins {
     pub const LORA_RST: u8 = 36;  // PC4
     pub const LORA_DIO0: u8 = 37; // PC5
 
+    // SPI2 — W5500 Ethernet
+    pub const SPI2_NSS: u8 = 28;  // PB12
+    pub const SPI2_SCK: u8 = 29;  // PB13
+    pub const SPI2_MISO: u8 = 30; // PB14
+    pub const SPI2_MOSI: u8 = 31; // PB15
+    pub const W5500_RST: u8 = 51; // PD3
+    pub const W5500_INT: u8 = 52; // PD4
+
+    // SPI3 — ATWINC1500 WiFi
+    pub const SPI3_SCK: u8 = 19;      // PB3
+    pub const SPI3_MISO: u8 = 20;     // PB4
+    pub const SPI3_MOSI: u8 = 21;     // PB5
+    pub const WIFI_CS: u8 = 67;       // PE3
+    pub const WIFI_RST: u8 = 68;      // PE4
+    pub const WIFI_IRQ: u8 = 69;      // PE5
+    pub const WIFI_CHIP_EN: u8 = 70;  // PE6
+
     // USART2 — Modbus RS485
     pub const RS485_TX: u8 = 2;    // PA2
     pub const RS485_RX: u8 = 3;    // PA3
@@ -105,9 +151,19 @@ pub mod pins {
     pub const DEBUG_TX: u8 = 9;  // PA9
     pub const DEBUG_RX: u8 = 10; // PA10
 
-    // USART3 — ESP32-S3 bridge (for cloud connectivity)
-    pub const BRIDGE_TX: u8 = 26; // PB10
-    pub const BRIDGE_RX: u8 = 27; // PB11
+    // USART3 — RN4870 BLE module
+    pub const BLE_TX: u8 = 26;       // PB10
+    pub const BLE_RX: u8 = 27;       // PB11
+    pub const BLE_RST: u8 = 56;      // PD8
+    pub const BLE_STATUS: u8 = 57;   // PD9
+
+    // UART4 — SIM7600 Cellular
+    pub const GSM_TX: u8 = 42;        // PC10
+    pub const GSM_RX: u8 = 43;        // PC11
+    pub const GSM_PWRKEY: u8 = 53;    // PD5
+    pub const GSM_STATUS: u8 = 54;    // PD6
+    pub const GSM_RST: u8 = 55;       // PD7
+    pub const GSM_DTR: u8 = 66;       // PE2
 
     // ADC1 — Analog inputs
     pub const ADC_BATTERY: u8 = 0;        // PA0 (ADC1_CH0)
@@ -174,17 +230,17 @@ pub mod modbus {
 /// | 1 | 1 | Reserved (defaults to Hybrid) |
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum OperatingMode {
-    /// Cloud mode: MQTT + HTTP over WiFi/Ethernet.
-    /// ESP32-S3 handles all cloud connectivity.
-    /// STM32F407 handles sensors only and bridges data to ESP32 via USART3.
+    /// Cloud mode: MQTT + HTTP over WiFi, Ethernet, or Cellular.
+    /// The STM32F407 drives all connectivity interfaces directly
+    /// (ATWINC1500 WiFi, W5500 Ethernet, SIM7600 Cellular).
     Cloud,
     /// SCADA mode: Modbus RTU over RS485.
     /// All data exposed as Modbus holding/input registers.
     /// No cloud connectivity — fully air-gapped.
     Scada,
     /// Hybrid mode: both cloud and SCADA simultaneously.
-    /// ESP32-S3 handles MQTT/HTTP, STM32F407 handles Modbus RS485.
-    /// Data is served on both interfaces concurrently.
+    /// Cloud data is sent via WiFi/Ethernet/Cellular while Modbus RS485
+    /// serves the same data to SCADA masters concurrently.
     #[default]
     Hybrid,
 }
@@ -200,7 +256,7 @@ impl OperatingMode {
         }
     }
 
-    /// Whether this mode enables cloud connectivity (MQTT/HTTP via ESP32-S3).
+    /// Whether this mode enables cloud connectivity (MQTT/HTTP via WiFi/Ethernet/Cellular).
     pub fn cloud_enabled(&self) -> bool {
         matches!(self, OperatingMode::Cloud | OperatingMode::Hybrid)
     }
@@ -225,7 +281,10 @@ pub struct Stm32Status {
     pub sysclk_mhz: u32,
     pub mode: OperatingMode,
     pub rs485_ok: bool,
-    pub esp32_bridge_ok: bool,
+    pub wifi_ok: bool,
+    pub ble_ok: bool,
+    pub ethernet_ok: bool,
+    pub cellular_ok: bool,
     pub iwdg_enabled: bool,
     pub fpu_enabled: bool,
     pub dma_enabled: bool,
@@ -237,52 +296,13 @@ impl Default for Stm32Status {
             sysclk_mhz: clocks::SYSCLK_HZ / 1_000_000,
             mode: OperatingMode::Hybrid,
             rs485_ok: false,
-            esp32_bridge_ok: false,
+            wifi_ok: false,
+            ble_ok: false,
+            ethernet_ok: false,
+            cellular_ok: false,
             iwdg_enabled: false,
             fpu_enabled: true,
             dma_enabled: false,
         }
-    }
-}
-
-/// ESP32-S3 ↔ STM32F407 bridge protocol.
-///
-/// The two MCUs communicate via USART3 at 921600 baud using a simple
-/// framed protocol:
-///
-/// ```text
-/// ┌──────┬──────┬────────┬─────────┬───────┐
-/// │ SYNC │ LEN  │  CMD   │ PAYLOAD │  CRC  │
-/// │ 0xA5 │ u16  │  u8    │  var    │ u16   │
-/// └──────┴──────┴────────┴─────────┴───────┘
-/// ```
-pub mod bridge {
-    /// Sync byte for frame detection.
-    pub const SYNC_BYTE: u8 = 0xA5;
-    /// Bridge UART baud rate.
-    pub const BAUD_RATE: u32 = 921_600;
-    /// Maximum bridge frame payload size.
-    pub const MAX_PAYLOAD: usize = 512;
-
-    /// Bridge commands.
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    #[repr(u8)]
-    pub enum BridgeCmd {
-        /// STM32 → ESP32: Send weather reading for MQTT publish.
-        SendReading = 0x01,
-        /// STM32 → ESP32: Send alert for MQTT publish.
-        SendAlert = 0x02,
-        /// STM32 → ESP32: Send status update.
-        SendStatus = 0x03,
-        /// ESP32 → STM32: Configuration update from cloud.
-        ConfigUpdate = 0x10,
-        /// ESP32 → STM32: OTA trigger.
-        OtaTrigger = 0x11,
-        /// ESP32 → STM32: Time sync (NTP epoch).
-        TimeSync = 0x12,
-        /// Bidirectional: Heartbeat/keepalive.
-        Heartbeat = 0xFE,
-        /// Bidirectional: ACK.
-        Ack = 0xFF,
     }
 }

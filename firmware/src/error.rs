@@ -10,18 +10,59 @@ pub enum Error {
     SensorOutOfRange(SensorKind),
     SensorDegraded(SensorKind),
 
-    // Communication errors
+    // WiFi module errors (ATWINC1500)
+    WifiModuleInitFailed,
+    WifiModuleNotResponding,
     WifiConnectionFailed,
     WifiTimeout,
+    WifiScanFailed,
+
+    // MQTT errors
     MqttConnectionFailed,
     MqttPublishFailed,
     MqttSubscribeFailed,
+
+    // BLE module errors (RN4870)
     BleInitFailed,
     BleAdvertiseFailed,
+    BleConnectionFailed,
+    BleNotReady,
+
+    // LoRa errors
     LoraInitFailed,
     LoraTxFailed,
     LoraRxTimeout,
+
+    // HTTP errors
     HttpServerError,
+
+    // Cellular errors (SIM7600)
+    #[cfg(feature = "cellular")]
+    CellularInitFailed,
+    #[cfg(feature = "cellular")]
+    CellularNoSignal,
+    #[cfg(feature = "cellular")]
+    CellularRegistrationFailed,
+    #[cfg(feature = "cellular")]
+    CellularTxFailed,
+    #[cfg(feature = "cellular")]
+    CellularSimError,
+    #[cfg(feature = "cellular")]
+    CellularDataConnectionFailed,
+    #[cfg(feature = "cellular")]
+    CellularTimeout,
+
+    // Ethernet errors (W5500)
+    #[cfg(feature = "ethernet")]
+    EthernetInitFailed,
+    #[cfg(feature = "ethernet")]
+    EthernetLinkDown,
+    #[cfg(feature = "ethernet")]
+    EthernetDhcpFailed,
+    #[cfg(feature = "ethernet")]
+    EthernetSocketError,
+    #[cfg(feature = "ethernet")]
+    EthernetTxFailed,
 
     // I2C / SPI bus errors
     I2cNack,
@@ -54,7 +95,11 @@ pub enum Error {
     ModbusFrameError,
     ModbusCrcError,
     Rs485TxFailed,
-    BridgeTimeout,
+
+    // TCP socket errors
+    SocketOpenFailed,
+    SocketClosed,
+    SocketTimeout,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -82,17 +127,46 @@ impl fmt::Display for Error {
             Error::SensorReadFailed(s) => write!(f, "sensor read failed: {:?}", s),
             Error::SensorOutOfRange(s) => write!(f, "sensor out of range: {:?}", s),
             Error::SensorDegraded(s) => write!(f, "sensor degraded: {:?}", s),
+            Error::WifiModuleInitFailed => write!(f, "WiFi module init failed"),
+            Error::WifiModuleNotResponding => write!(f, "WiFi module not responding"),
             Error::WifiConnectionFailed => write!(f, "WiFi connection failed"),
             Error::WifiTimeout => write!(f, "WiFi timeout"),
+            Error::WifiScanFailed => write!(f, "WiFi scan failed"),
+            Error::BleInitFailed => write!(f, "BLE module init failed"),
+            Error::BleAdvertiseFailed => write!(f, "BLE advertise failed"),
+            Error::BleConnectionFailed => write!(f, "BLE connection failed"),
+            Error::BleNotReady => write!(f, "BLE module not ready"),
             Error::MqttConnectionFailed => write!(f, "MQTT connection failed"),
             Error::MqttPublishFailed => write!(f, "MQTT publish failed"),
             Error::MqttSubscribeFailed => write!(f, "MQTT subscribe failed"),
-            Error::BleInitFailed => write!(f, "BLE init failed"),
-            Error::BleAdvertiseFailed => write!(f, "BLE advertise failed"),
             Error::LoraInitFailed => write!(f, "LoRa init failed"),
             Error::LoraTxFailed => write!(f, "LoRa TX failed"),
             Error::LoraRxTimeout => write!(f, "LoRa RX timeout"),
             Error::HttpServerError => write!(f, "HTTP server error"),
+            #[cfg(feature = "cellular")]
+            Error::CellularInitFailed => write!(f, "cellular init failed"),
+            #[cfg(feature = "cellular")]
+            Error::CellularNoSignal => write!(f, "cellular no signal"),
+            #[cfg(feature = "cellular")]
+            Error::CellularRegistrationFailed => write!(f, "cellular registration failed"),
+            #[cfg(feature = "cellular")]
+            Error::CellularTxFailed => write!(f, "cellular TX failed"),
+            #[cfg(feature = "cellular")]
+            Error::CellularSimError => write!(f, "SIM card error"),
+            #[cfg(feature = "cellular")]
+            Error::CellularDataConnectionFailed => write!(f, "cellular data connection failed"),
+            #[cfg(feature = "cellular")]
+            Error::CellularTimeout => write!(f, "cellular timeout"),
+            #[cfg(feature = "ethernet")]
+            Error::EthernetInitFailed => write!(f, "Ethernet init failed"),
+            #[cfg(feature = "ethernet")]
+            Error::EthernetLinkDown => write!(f, "Ethernet link down"),
+            #[cfg(feature = "ethernet")]
+            Error::EthernetDhcpFailed => write!(f, "Ethernet DHCP failed"),
+            #[cfg(feature = "ethernet")]
+            Error::EthernetSocketError => write!(f, "Ethernet socket error"),
+            #[cfg(feature = "ethernet")]
+            Error::EthernetTxFailed => write!(f, "Ethernet TX failed"),
             Error::I2cNack => write!(f, "I2C NACK"),
             Error::I2cBusError => write!(f, "I2C bus error"),
             Error::I2cTimeout => write!(f, "I2C timeout"),
@@ -113,7 +187,9 @@ impl fmt::Display for Error {
             Error::ModbusFrameError => write!(f, "Modbus frame error"),
             Error::ModbusCrcError => write!(f, "Modbus CRC error"),
             Error::Rs485TxFailed => write!(f, "RS485 transmit failed"),
-            Error::BridgeTimeout => write!(f, "ESP32 bridge timeout"),
+            Error::SocketOpenFailed => write!(f, "TCP socket open failed"),
+            Error::SocketClosed => write!(f, "TCP socket closed"),
+            Error::SocketTimeout => write!(f, "TCP socket timeout"),
         }
     }
 }

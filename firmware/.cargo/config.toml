@@ -1,14 +1,9 @@
-[target.xtensa-esp32s3-none-elf]
-runner = "espflash flash --monitor"
+[target.thumbv7em-none-eabihf]
+runner = "probe-rs run --chip STM32F407VGTx"
+rustflags = [
+    "-C", "link-arg=-Tlink.x",
+    "-C", "link-arg=-Tdefmt.x",
+]
 
 [build]
-rustflags = [
-    "-C", "link-arg=-nostartfiles",
-]
-target = "xtensa-esp32s3-none-elf"
-
-[unstable]
-build-std = ["core", "alloc"]
-
-[env]
-ESP_LOG = "info"
+target = "thumbv7em-none-eabihf"

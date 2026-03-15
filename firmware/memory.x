@@ -1,38 +1,26 @@
-/* ESP32-S3 Memory Layout */
-/* Linker script for weather station firmware */
+/* STM32F407VGT6 Memory Layout */
+/* Single-MCU weather station firmware */
+/* 1 MB Flash, 128 KB SRAM + 64 KB CCM RAM */
 
 MEMORY
 {
-    /* Internal SRAM - 512 KB */
-    IRAM   (rwx) : ORIGIN = 0x40370000, LENGTH = 64K    /* Instruction RAM */
-    DRAM   (rw)  : ORIGIN = 0x3FC88000, LENGTH = 448K   /* Data RAM */
+    /* Main Flash — 1 MB total */
+    /* Sector 0-3:   16 KB each (64 KB) — Bootloader */
+    /* Sector 4:     64 KB             — OTA metadata */
+    /* Sector 5-7:   128 KB each       — App partition (384 KB) */
+    /* Sector 8-11:  128 KB each       — OTA partition (512 KB) */
+    FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 1024K
 
-    /* External PSRAM - 8 MB */
-    PSRAM  (rw)  : ORIGIN = 0x3C000000, LENGTH = 8M
+    /* Main SRAM — 128 KB */
+    RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
 
-    /* External Flash - 16 MB */
-    /* Partitioned as follows: */
-    /* 0x000000 - 0x00FFFF : Bootloader (64 KB) */
-    /* 0x010000 - 0x010FFF : Partition table (4 KB) */
-    /* 0x011000 - 0x016FFF : NVS (24 KB) */
-    /* 0x017000 - 0x018FFF : OTA data (8 KB) */
-    /* 0x019000 - 0x418FFF : App partition 0 (4 MB) */
-    /* 0x419000 - 0x818FFF : App partition 1 / OTA (4 MB) */
-    /* 0x819000 - 0xFFFFFF : Data storage (7.9 MB) */
-    IROM   (rx)  : ORIGIN = 0x42000000, LENGTH = 4M     /* App code in flash */
-    DROM   (r)   : ORIGIN = 0x3C000000, LENGTH = 4M     /* Read-only data */
+    /* Core-Coupled Memory (CCM) RAM — 64 KB */
+    /* Used for stack and time-critical data */
+    CCMRAM (rw) : ORIGIN = 0x10000000, LENGTH = 64K
 }
 
-REGION_ALIAS("REGION_TEXT", IROM);
-REGION_ALIAS("REGION_RODATA", DROM);
-REGION_ALIAS("REGION_DATA", DRAM);
-REGION_ALIAS("REGION_BSS", DRAM);
-REGION_ALIAS("REGION_STACK", DRAM);
-REGION_ALIAS("REGION_HEAP", DRAM);
+/* Stack in CCM for deterministic access */
+_stack_start = ORIGIN(CCMRAM) + LENGTH(CCMRAM);
 
-/* Stack size for each core */
-_stack_size_core0 = 8K;
-_stack_size_core1 = 8K;
-
-/* Heap size */
-_heap_size = 384K;
+/* Heap allocation — 48 KB from main SRAM */
+_heap_size = 48K;

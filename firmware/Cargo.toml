@@ -1,18 +1,16 @@
 [package]
 name = "weather-station"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["Weather Station Team"]
-description = "ESP32-S3 Weather Station Firmware"
+description = "STM32F407 Weather Station Firmware — Single-MCU Industrial Architecture"
 
 [dependencies]
-# ESP32-S3 HAL
-esp-hal = { version = "0.22", features = ["esp32s3"] }
-esp-backtrace = { version = "0.14", features = ["esp32s3", "panic-handler", "println"] }
-esp-println = { version = "0.12", features = ["esp32s3", "log"] }
-esp-alloc = "0.6"
-esp-wifi = { version = "0.11", features = ["esp32s3", "wifi", "ble"] }
-esp-storage = { version = "0.3", features = ["esp32s3"] }
+# STM32F4 HAL
+stm32f4xx-hal = { version = "0.21", features = ["stm32f407", "rt"] }
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7"
+panic-halt = "1.0"
 
 # Embedded ecosystem
 embedded-hal = "1.0"
@@ -31,6 +29,8 @@ serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
 # Logging
 log = "0.4"
+defmt = "0.3"
+defmt-rtt = "0.4"
 
 # No-std compatible utilities
 heapless = "0.8"
@@ -38,14 +38,19 @@ heapless = "0.8"
 # Math (for libm functions in no_std)
 libm = "0.2"
 
+# Allocator for no_std
+embedded-alloc = "0.6"
+
 [features]
 default = []
 agriculture = []
 solar = []
 india = []
-stm32 = []
+cellular = []
+ethernet = []
 all-industries = ["agriculture", "solar", "india"]
-full-system = ["agriculture", "solar", "india", "stm32"]
+all-comms = ["cellular", "ethernet"]
+full-system = ["agriculture", "solar", "india", "cellular", "ethernet"]
 
 [profile.dev]
 opt-level = "s"
