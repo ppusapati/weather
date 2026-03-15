@@ -15,8 +15,7 @@ pub mod mqtt;
 pub mod uart_console;
 pub mod wifi;
 
-// Modbus RTU (SCADA) — requires STM32F407 with RS485 transceiver
-#[cfg(feature = "stm32")]
+// Modbus RTU (SCADA) — STM32F407 with RS485 transceiver
 pub mod modbus_rtu;
 
 // Cellular modem (SIM7600E-H) — for remote stations without WiFi/Ethernet

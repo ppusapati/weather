@@ -19,7 +19,7 @@
 ║  │                        SCHEDULER                                   │   ║
 ║  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐ │   ║
 ║  │  │ Sensor Task  │  │ Comms Task   │  │ Maintenance Task         │ │   ║
-║  │  │ (Core 0)     │  │ (Core 1)     │  │ (Core 1, low priority)  │ │   ║
+║  │  │ (high pri)   │  │ (med pri)    │  │ (low priority)          │ │   ║
 ║  │  │ Period: 5-30s│  │ Event-driven │  │ Period: 6h              │ │   ║
 ║  │  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────────┘ │   ║
 ║  │         │                 │                      │                 │   ║
@@ -34,9 +34,9 @@
 ║  │  ┌──────▼───────┐  ┌─────▼────────┐                              │   ║
 ║  │  │Alert Engine  │  │Power Manager │                               │   ║
 ║  │  │ Threshold    │  │ Active       │                               │   ║
-║  │  │ monitoring   │  │ Modem Sleep  │                               │   ║
-║  │  │              │  │ Light Sleep  │                               │   ║
-║  │  │              │  │ Deep Sleep   │                               │   ║
+║  │  │ monitoring   │  │ Sleep (WFI)  │                               │   ║
+║  │  │              │  │ Stop         │                               │   ║
+║  │  │              │  │ Standby      │                               │   ║
 ║  │  └──────────────┘  └──────────────┘                               │   ║
 ║  └───────────────────────────────────────────────────────────────────┘   ║
 ║                                                                           ║
@@ -83,7 +83,7 @@
 ║                                                                           ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
 ║                                                                           ║
-║  LAYER 1: HAL (esp-hal)                                                   ║
+║  LAYER 1: HAL (stm32f4xx-hal)                                             ║
 ║  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────────┐ ║
 ║  │  I2C   │ │  SPI   │ │  ADC   │ │  GPIO  │ │  UART  │ │  Timers    │ ║
 ║  │ Master │ │ Master │ │ 12-bit │ │ In/Out │ │ Serial │ │  HW Timer  │ ║
@@ -95,11 +95,11 @@
 ║                                                                           ║
 ║  LAYER 0: HARDWARE                                                        ║
 ║  ┌───────────────────────────────────────────────────────────────────────┐ ║
-║  │  ESP32-S3-WROOM-1-N16R8                                              │ ║
-║  │  Xtensa LX7 Dual-Core @ 240 MHz                                     │ ║
-║  │  512 KB SRAM · 8 MB PSRAM · 16 MB Flash                             │ ║
-║  │  WiFi 802.11 b/g/n · BLE 5.0                                        │ ║
-║  │  45 GPIO · 20 ADC channels · 2 I2C · 4 SPI · 3 UART                │ ║
+║  │  STM32F407VGT6 — ARM Cortex-M4F @ 168 MHz (Industrial -40/+105°C)    │ ║
+║  │  192 KB SRAM (128 KB + 64 KB CCM) · 1 MB Flash                      │ ║
+║  │  ATWINC1500 WiFi (SPI3) · RN4870 BLE (USART3)                       │ ║
+║  │  W5500 Ethernet (SPI2, optional) · SIM7600 Cellular (UART4, opt)    │ ║
+║  │  82 GPIO · 16 ADC channels · 3 I2C · 3 SPI · 4 UART                │ ║
 ║  └───────────────────────────────────────────────────────────────────────┘ ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
@@ -108,30 +108,22 @@
 ## Memory Layout
 
 ```
-Flash (16 MB)
-┌───────────────────────┐ 0x00000000
-│ Bootloader (64 KB)    │
-├───────────────────────┤ 0x00010000
-│ Partition Table (4 KB)│
-├───────────────────────┤ 0x00011000
-│ NVS (24 KB)           │  ← config, calibration, WiFi creds
-├───────────────────────┤ 0x00017000
-│ OTA Data (8 KB)       │  ← boot partition selector
-├───────────────────────┤ 0x00019000
-│ App Partition 0 (4 MB)│  ← active firmware
-├───────────────────────┤ 0x00419000
-│ App Partition 1 (4 MB)│  ← OTA staging
-├───────────────────────┤ 0x00819000
-│ Data Storage (7.9 MB) │  ← circular buffer for readings
-└───────────────────────┘ 0x01000000
+Flash (1 MB) — STM32F407VGT6
+┌───────────────────────┐ 0x08000000
+│ Sector 0-3 (64 KB)    │  ← Firmware (active)
+├───────────────────────┤ 0x08010000
+│ Sector 4 (64 KB)      │  ← Data storage (circular buffer)
+├───────────────────────┤ 0x08020000
+│ Sectors 5-7 (384 KB)  │  ← Firmware continued
+├───────────────────────┤ 0x08080000
+│ Sectors 8-11 (512 KB) │  ← OTA staging (bank 2)
+└───────────────────────┘ 0x08100000
 
-SRAM (512 KB)
-┌───────────────────────┐ 0x3FC88000
-│ Stack (Core 0) 8 KB   │
+SRAM (192 KB)
+┌───────────────────────┐ 0x20000000
+│ Stack (8 KB)          │
 ├───────────────────────┤
-│ Stack (Core 1) 8 KB   │
-├───────────────────────┤
-│ Heap (~400 KB)        │
+│ Heap (48 KB)          │
 │  ├─ Ring Buffers      │
 │  ├─ MQTT buffers      │
 │  ├─ HTTP buffers      │
@@ -141,7 +133,9 @@ SRAM (512 KB)
 │  ├─ Config            │
 │  ├─ Current readings  │
 │  └─ Sensor state      │
-└───────────────────────┘
+├───────────────────────┤ 0x20020000
+│ CCM RAM (64 KB)       │  ← DMA-inaccessible, stack/scratch
+└───────────────────────┘ 0x20030000
 ```
 
 ## Interrupt Priority Map

@@ -1,8 +1,14 @@
 /// Flash storage driver — circular buffer for weather readings.
 ///
-/// Uses a dedicated flash partition (~7.9 MB) to store readings
-/// as a circular log. When the storage is full, the oldest records
-/// are overwritten.
+/// Uses STM32F407 internal flash sector 4 (64 KB at 0x0801_0000)
+/// to store readings as a circular log. When the storage is full,
+/// the oldest records are overwritten.
+///
+/// STM32F407 flash sector layout:
+///   Sectors 0-3: 16 KB each (firmware)
+///   Sector 4:    64 KB (data storage — this module)
+///   Sectors 5-7: 128 KB each (firmware continued)
+///   Sectors 8-11: 128 KB each (OTA partition)
 
 use crate::config;
 use crate::core::data_pipeline::WeatherReading;
@@ -110,12 +116,13 @@ impl FlashStorage {
         // Calculate flash address
         let addr = self.base_addr + (self.write_index * self.record_slot_size as u32);
 
-        // In real firmware:
-        // 1. Erase flash sector if needed (4KB sectors)
-        // 2. Write header
-        // 3. Write payload
-        // esp_storage::FlashStorage::write(addr, &header_bytes)?;
-        // esp_storage::FlashStorage::write(addr + HEADER_SIZE, &payload)?;
+        // In real firmware (STM32F407):
+        // 1. Unlock flash: flash.unlock()
+        // 2. Erase sector 4 if at start of partition
+        //    (STM32F4 can only erase whole sectors — sector 4 is 64 KB)
+        // 3. Write header (32-bit aligned): flash.program(addr, &header_bytes)
+        // 4. Write payload (32-bit aligned): flash.program(addr + HEADER_SIZE, &payload)
+        // 5. Lock flash: flash.lock()
 
         log::debug!(
             "Flash: stored record #{} at 0x{:08X} ({} bytes)",
@@ -178,8 +185,10 @@ impl FlashStorage {
     pub fn erase_all(&mut self) -> Result<()> {
         log::warn!("Flash: erasing all stored data");
 
-        // In real firmware: erase the entire data partition
-        // esp_storage::FlashStorage::erase(self.base_addr, self.partition_size)?;
+        // In real firmware (STM32F407):
+        // flash.unlock()
+        // flash.erase_sector(4)  — sector 4 is 64 KB at 0x0801_0000
+        // flash.lock()
 
         self.write_index = 0;
         self.count = 0;

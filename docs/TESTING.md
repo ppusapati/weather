@@ -5,7 +5,7 @@
 The firmware uses a dual testing strategy:
 
 1. **Host-side unit tests** — Run on `x86_64`, test pure logic (CRC, filters, validation, derived values)
-2. **On-target integration tests** — Run on ESP32-S3 hardware, test I2C/SPI/GPIO interactions
+2. **On-target integration tests** — Run on STM32F407 hardware, test I2C/SPI/GPIO interactions
 
 ## Running Host Tests
 
@@ -66,11 +66,11 @@ For integration tests, add to `tests/integration.rs`.
 
 ## On-Target Testing
 
-For hardware integration testing on the ESP32-S3:
+For hardware integration testing on the STM32F407:
 
-1. Connect the board via USB
-2. Flash test firmware: `cargo espflash flash --monitor`
-3. Observe serial output for sensor readings
+1. Connect ST-Link V2 via SWD header
+2. Flash test firmware: `probe-rs run --chip STM32F407VGTx target/release/weather-station`
+3. Observe serial output for sensor readings (USART1 @ 115200)
 4. Use UART console commands:
    - `status` — Check all sensor statuses
    - `reading` — View current sensor values

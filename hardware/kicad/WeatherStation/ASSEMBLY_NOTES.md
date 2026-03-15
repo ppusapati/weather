@@ -19,27 +19,38 @@
 | IPC Class | 2 (Standard) |
 | UL Rating | UL 94V-0 |
 
-## ESP32-S3 Module Selection
+## Single-MCU Architecture: STM32F407VGT6
 
-### Commercial vs Industrial Grade
+### MCU Selection
 
-| Variant | Ordering Code | Temp Range | Use Case |
-|---------|--------------|------------|----------|
-| **Commercial** | ESP32-S3-WROOM-1-N16R8 | 0°C to +85°C | Indoor / lab prototyping |
-| **Industrial** | ESP32-S3-WROOM-1-N16R8**I** | -40°C to +85°C | **Outdoor weather station** |
+| Parameter | Value |
+|-----------|-------|
+| MCU | STM32F407VGT6 (LQFP-100) |
+| Core | ARM Cortex-M4F @ 168 MHz |
+| Flash | 1 MB |
+| SRAM | 192 KB (128 KB + 64 KB CCM) |
+| Temp Range | -40°C to +105°C (Industrial) |
+| FPU | Single-precision hardware FPU |
 
-> **RECOMMENDATION**: For production weather stations, always use the **-I (Industrial)**
-> variant. The 12% cost premium (~$1.50) is negligible versus field failure costs.
+### Communication Modules
 
-### Why NOT Industrial Grade Enough?
+| Module | Interface | Function |
+|--------|-----------|----------|
+| ATWINC1500-MR210PB | SPI3 (PB3-PB5) | WiFi 802.11 b/g/n, integrated TCP/IP |
+| RN4870-I/RM | USART3 (PB10/PB11) | BLE 5.0, integrated GATT |
+| W5500 | SPI2 (PB12-PB15) | Ethernet 10/100, 8 TCP sockets [optional] |
+| SIM7600E-H | UART4 (PC10/PC11) | LTE Cat-4 cellular, 150 Mbps [optional] |
 
-The ESP32-S3-WROOM-1 module, even in its industrial variant, has limitations for
-harsh environments:
+### Firmware Flashing
 
-1. **Not Automotive Grade** — Not AEC-Q100 qualified
-2. **Not MIL-SPEC** — Not tested to MIL-STD-810
-3. **No IP Rating** — The module itself has no ingress protection
-4. **Humidity** — Rated 10-90% RH non-condensing only
+| Method | Tool | Command |
+|--------|------|---------|
+| SWD (ST-Link) | probe-rs | `probe-rs run --chip STM32F407VGTx` |
+| SWD (ST-Link) | cargo-flash | `cargo flash --chip STM32F407VGTx --release` |
+| SWD (ST-Link) | OpenOCD | `openocd -f interface/stlink.cfg -f target/stm32f4x.cfg` |
+
+> **BOOT0 pin** must be LOW for normal flash boot. Pull-down resistor R21 (10k) ensures this.
+> For DFU boot (USB), drive BOOT0 HIGH during reset.
 
 ### Mitigation for Outdoor Deployment
 
@@ -48,7 +59,7 @@ harsh environments:
 | Water ingress | IP65+ ABS enclosure with cable glands |
 | Condensation | Conformal coating (Humiseal 1A33) on PCB |
 | UV degradation | UV-stabilized enclosure, no direct sun on PCB |
-| Temperature extremes | Industrial (-I) variant + thermal design |
+| Temperature extremes | STM32F407 industrial -40/+105°C rating |
 | Lightning/surge | TVS diodes on all external connectors |
 | Corrosion | ENIG finish + conformal coating |
 | Vibration | M3 standoffs with lock washers, strain relief on cables |
@@ -75,10 +86,10 @@ Total: 1.6mm
 ## Critical Layout Rules
 
 ### Antenna Keep-Out Zone
-- **Area**: 30mm x 12mm centered on top edge of PCB
-- **Constraint**: No copper on ANY layer (including ground planes)
-- No components within this zone
-- ESP32-S3 module positioned so onboard antenna extends into this clear area
+- **ATWINC1500 WiFi antenna**: 30mm x 12mm keep-out near SMA connector J18
+- **RN4870 BLE antenna**: 15mm x 8mm keep-out around on-module chip antenna
+- **Constraint**: No copper on ANY layer (including ground planes) in keep-out zones
+- No components within these zones
 
 ### LoRa RF Trace
 - 50-ohm controlled impedance from SX1276 RFIO pin to SMA connector
@@ -108,10 +119,10 @@ Total: 1.6mm
 5. **Reflow Top** — Peak 245°C, SAC305
 6. **Place THT** — Connectors (JST-PH, RJ11, SMA, pin headers)
 7. **Wave/Selective Solder** — THT components
-8. **Manual** — ESP32-S3 module (if not reflowed), USB-C
+8. **Manual** — Communication modules (ATWINC1500, RN4870), USB-C
 9. **Clean** — IPA wash to remove flux residue
 10. **Inspect** — AOI + visual inspection
-11. **Program** — Flash firmware via USB-C or UART header
+11. **Program** — Flash firmware via SWD (ST-Link V2) or UART header
 12. **Test** — Functional test (see test procedure below)
 13. **Conformal Coat** — Humiseal 1A33, avoid connectors and antenna
 
@@ -122,10 +133,10 @@ Total: 1.6mm
 2. Power-on test:
    a. Connect USB-C, verify 3.3V rail (U3 output) = 3.30V ±0.05V
    b. Verify charge LED (D3) illuminates with battery connected
-   c. Measure current draw: ~80mA idle (WiFi off), ~180mA (WiFi active)
+   c. Measure current draw: ~60mA idle (WiFi off), ~160mA (WiFi active)
 3. Firmware flash:
-   a. Hold BOOT, press RESET, release BOOT
-   b. Flash via esptool: esptool.py --chip esp32s3 write_flash 0x0 firmware.bin
+   a. Connect ST-Link V2 to SWD header (SWDIO, SWCLK, GND, 3.3V)
+   b. Flash via probe-rs: probe-rs run --chip STM32F407VGTx target/release/weather-station
 4. Sensor check:
    a. I2C scan: should find 0x76 (BME280), 0x36 (AS5600), 0x60 (SI1145), 0x23 (BH1750)
    b. Read temperature (should be ~25°C room temp)
@@ -163,9 +174,9 @@ Total: 1.6mm
 
 ```
   ┌──────────────────────────────────┐
-  │ ████ COAT ████  ░░NO COAT░░     │  ← Antenna zone: NO COAT
+  │ ████ COAT ████  ░░NO COAT░░     │  ← ATWINC1500/RN4870 antenna zones: NO COAT
   │ ████████████████████████████████ │
-  │ ████ ESP32-S3 ████  COAT  █████ │  ← Module body: COAT
+  │ ████ STM32F407 ████ COAT  █████ │  ← MCU: COAT
   │ ████████████████████████████████ │
   │ █ LoRa █  ████████  █ Sensors █ │
   │ █ COAT █  ████████  █  COAT   █ │
@@ -182,7 +193,8 @@ Total: 1.6mm
 
 ## Ordering Checklist
 
-- [ ] Verify industrial temp ESP32-S3 (-I suffix) in BOM
+- [ ] Verify STM32F407VGT6 industrial temp variant in BOM
+- [ ] Verify ATWINC1500, RN4870, W5500, SIM7600 in BOM
 - [ ] Verify 4-layer stackup specified in fabrication notes
 - [ ] Verify impedance control requested (50ohm + 90ohm)
 - [ ] Verify ENIG surface finish specified

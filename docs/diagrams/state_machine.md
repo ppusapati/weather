@@ -209,9 +209,9 @@
                     │   POWER_ACTIVE   │◄──────── Timer / GPIO wake
                     │                  │
                     │ All systems on   │
-                    │ CPU: 240 MHz     │
+                    │ CPU: 168 MHz     │
                     │ WiFi: active     │
-                    │ ~160 mA          │
+                    │ ~250 mA          │
                     └────────┬─────────┘
                              │
                     ┌────────┴─────────┐
@@ -219,10 +219,10 @@
                     └────────┬─────────┘
                              │ YES
                     ┌────────▼─────────┐
-                    │  MODEM_SLEEP     │◄──────── WiFi beacon interval
+                    │  SLEEP (WFI)     │◄──────── Next task ready
                     │                  │
-                    │ CPU: active      │
-                    │ WiFi: duty cycle │
+                    │ CPU: WFI halt    │
+                    │ Peripherals: on  │
                     │ ~20 mA           │
                     └────────┬─────────┘
                              │
@@ -232,15 +232,15 @@
                     └────────┬─────────┘
                              │ YES
                     ┌────────▼─────────┐
-                    │  LIGHT_SLEEP     │
+                    │  STOP MODE       │
                     │                  │
-                    │ CPU: paused      │
-                    │ WiFi: off        │
-                    │ RAM: retained    │
-                    │ ~0.8 mA          │
+                    │ CPU: stopped     │
+                    │ All clocks: off  │
+                    │ SRAM: retained   │
+                    │ ~20 µA           │
                     │                  │
-                    │ Wake: timer,     │
-                    │       GPIO       │
+                    │ Wake: EXTI,      │
+                    │       RTC alarm  │
                     └────────┬─────────┘
                              │
                     ┌────────┴─────────┐
@@ -249,16 +249,16 @@
                     └────────┬─────────┘
                              │ YES
                     ┌────────▼─────────┐
-                    │  DEEP_SLEEP      │
+                    │  STANDBY         │
                     │                  │
                     │ CPU: off         │
-                    │ WiFi: off        │
-                    │ RAM: lost        │
+                    │ All clocks: off  │
+                    │ SRAM: lost       │
                     │ RTC: running     │
-                    │ ~10 µA           │
+                    │ ~2 µA            │
                     │                  │
-                    │ Wake: RTC timer  │
-                    │  (configurable)  │
+                    │ Wake: RTC alarm, │
+                    │  WKUP pin        │
                     │ Full reboot on   │
                     │  wake            │
                     └──────────────────┘

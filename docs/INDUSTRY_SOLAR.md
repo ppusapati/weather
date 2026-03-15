@@ -21,11 +21,11 @@ cargo build --release --features solar
 ### Pin Mapping (Solar Extension)
 
 ```
-ESP32-S3 Additional Pins (Solar)
+STM32F407 Additional Pins (Solar)
 ═══════════════════════════════════════════════════════════
 
 ADC (Pyranometer):
-  GPIO 7  ──── ADC ──── ML8511 / SP-110 Analog Output
+  PC2 (ADC1_CH12) ──── ML8511 / SP-110 Analog Output
 
 1-Wire (Panel Temperature):
   GPIO 16 ──── DATA ──── DS18B20 #1 (panel front, 4.7kΩ pull-up)

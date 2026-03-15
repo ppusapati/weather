@@ -21,12 +21,12 @@ cargo build --release --features agriculture
 ### Pin Mapping (Agriculture Extension)
 
 ```
-ESP32-S3 Additional Pins (Agriculture)
+STM32F407 Additional Pins (Agriculture)
 ═══════════════════════════════════════════════════════════
 
 ADC (Soil Moisture):
-  GPIO 7  ──── ADC ──── Soil Moisture Shallow (capacitive)
-  GPIO 18 ──── ADC ──── Soil Moisture Deep (capacitive)
+  PC2 (ADC1_CH12) ──── Soil Moisture Shallow (capacitive)
+  PC3 (ADC1_CH13) ──── Soil Moisture Deep (capacitive)
 
 1-Wire (Soil Temperature):
   GPIO 16 ──── DATA ──── DS18B20 (4.7kΩ pull-up to 3.3V)

@@ -6,7 +6,7 @@
 - **Symptom**: `SensorStatus::NotFound` for BME280, temperature/humidity/pressure all `None`
 - **Check**: I2C address (0x76 vs 0x77 — some breakouts use 0x77 with SDO pulled high)
 - **Check**: I2C pull-ups (4.7k on SDA/SCL)
-- **Check**: Wiring — SDA to GPIO8, SCL to GPIO9
+- **Check**: Wiring — SDA to PB7, SCL to PB6
 - **Fix**: If address is 0x77, update `BME280_ADDR` in `config.rs`
 
 ### BME280 stuck sensor detection
@@ -17,8 +17,8 @@
 
 ### Wind speed always zero
 - **Symptom**: `wind_speed_kmh` is always `Some(0.0)`
-- **Check**: Anemometer reed switch wiring to GPIO4
-- **Check**: 10k pull-up resistor on GPIO4
+- **Check**: Anemometer reed switch wiring to PB0 (TIM3_CH3)
+- **Check**: 10k pull-up resistor on PB0
 - **Check**: GPIO interrupt configuration (rising edge)
 - **Test**: Manually trigger the reed switch, check pulse counter via UART `reading` command
 
@@ -30,7 +30,7 @@
 
 ### Rain gauge over-counting
 - **Symptom**: Rain accumulation increasing without rain
-- **Cause**: Electrical noise on GPIO5 causing false triggers
+- **Cause**: Electrical noise on PB1 causing false triggers
 - **Fix**: Add hardware debounce (100nF cap across reed switch)
 - **Fix**: Check software debounce interval in rain gauge driver
 
@@ -44,7 +44,7 @@
 ### WiFi won't connect
 - **Check**: SSID and password via UART `wifi status` command
 - **Check**: WiFi signal strength — station may be too far from AP
-- **Check**: 2.4 GHz only (ESP32-S3 does not support 5 GHz)
+- **Check**: 2.4 GHz only (ATWINC1500 does not support 5 GHz)
 - **Retry**: WiFi uses exponential backoff (2s, 4s, 8s... up to 30s)
 - **Max retries**: 5 attempts before `WifiState::Failed`
 - **Recovery**: Power cycle or send BLE provisioning with new credentials
@@ -57,7 +57,7 @@
 - **Note**: Failed messages are buffered to flash and replayed on reconnect
 
 ### BLE not discoverable
-- **Check**: BLE is initialized after WiFi (they share the radio)
+- **Check**: RN4870 BLE module is powered and RST pin (PD8) released
 - **Check**: Device name in runtime config
 - **Fix**: Some phones require clearing BLE cache after firmware update
 
@@ -73,7 +73,7 @@
 - **Check**: Power mode via UART `status` command
 - **Check**: WiFi reconnect loop (constant retries drain battery)
 - **Fix**: If WiFi is unavailable, firmware should fall back to LoRa-only mode
-- **Expected**: ~170 mA active, ~12 µA deep sleep
+- **Expected**: ~250 mA active, ~2 µA standby
 
 ### Won't enter deep sleep
 - **Check**: Battery percentage — deep sleep triggers below 20%
@@ -101,13 +101,13 @@
 
 ### Compilation fails with missing target
 ```bash
-espup install  # Installs Xtensa toolchain
-source ~/export-esp.sh  # Sets up environment
+rustup target add thumbv7em-none-eabihf  # ARM Cortex-M4F target
+cargo install probe-rs-tools  # Flashing tools
 ```
 
 ### Linker errors about memory
-- **Check**: `memory.x` flash partition sizes sum to 16 MB
-- **Check**: HEAP_SIZE in `config.rs` (default 384 KB, max ~512 KB)
+- **Check**: `memory.x` flash/RAM regions match STM32F407 (1 MB Flash, 128 KB RAM, 64 KB CCM)
+- **Check**: HEAP_SIZE in `config.rs` (default 48 KB)
 - **Fix**: Reduce binary size with `opt-level = "z"` and `lto = true`
 
 ## UART Console Commands

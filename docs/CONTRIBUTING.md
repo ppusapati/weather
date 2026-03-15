@@ -7,11 +7,10 @@
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    ```
 
-2. Install the Xtensa target (ESP32-S3):
+2. Install the ARM target (STM32F407):
    ```bash
-   cargo install espup
-   espup install
-   source ~/export-esp.sh
+   rustup target add thumbv7em-none-eabihf
+   cargo install probe-rs-tools
    ```
 
 3. Clone the repository and build:

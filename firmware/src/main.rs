@@ -1,20 +1,19 @@
-//! Weather Station Firmware — ESP32-S3
+//! Weather Station Firmware — STM32F407
 //!
-//! A production-grade weather station firmware targeting the ESP32-S3 MCU.
+//! A production-grade weather station firmware targeting the STM32F407VGT6 MCU.
+//! Single-MCU architecture with dedicated connectivity modules:
+//! ATWINC1500 (WiFi/SPI3), RN4870 (BLE/USART3), W5500 (Ethernet/SPI2),
+//! SIM7600E-H (Cellular/UART4).
+//!
 //! Reads environmental sensors and transmits data via WiFi, BLE, LoRa,
-//! UART, MQTT, and HTTP.
-//!
-//! # Architecture
-//!
-//! - **Core 0 (PRO)**: Sensor acquisition, GPIO ISRs, data pipeline
-//! - **Core 1 (APP)**: WiFi, BLE, LoRa, MQTT, HTTP, OTA, UART console
+//! UART, MQTT, HTTP, Modbus RS485, and optionally Ethernet/Cellular.
 //!
 //! # Module Organization
 //!
 //! - `config` — Pin assignments, constants, runtime configuration
 //! - `error` — Unified error types
-//! - `drivers` — Sensor drivers (BME280, wind, rain, UV, light)
-//! - `comms` — Communication channels (WiFi, BLE, LoRa, UART, MQTT, HTTP)
+//! - `drivers` — Sensor drivers (BME280, wind, rain, UV, light) + MCU/comm modules
+//! - `comms` — Communication channels (WiFi, BLE, LoRa, UART, MQTT, HTTP, Modbus)
 //! - `core` — Scheduler, data pipeline, power management, OTA
 //! - `storage` — Flash circular buffer, NVS access
 //! - `utils` — Ring buffer, CRC, formatting helpers
@@ -39,11 +38,13 @@ mod storage;
 
 use crate::comms::ble::BleServer;
 use crate::comms::http::HttpServer;
+use crate::comms::modbus_rtu::ModbusRtuSlave;
 use crate::comms::mqtt::MqttClient;
 use crate::comms::uart_console::UartConsole;
 use crate::comms::wifi::WifiManager;
 use crate::config::RuntimeConfig;
 use crate::core::data_pipeline::{DataPipeline, RawSensorData, WeatherReading};
+use crate::core::mode_manager::ModeManager;
 use crate::core::ota::OtaManager;
 use crate::core::power::PowerManager;
 use crate::core::scheduler::{Scheduler, TaskId};
@@ -56,10 +57,10 @@ static SYSTEM_ERROR: AtomicBool = AtomicBool::new(false);
 
 /// Heap allocator for `alloc` support.
 #[global_allocator]
-static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
+static ALLOCATOR: embedded_alloc::LlffHeap = embedded_alloc::LlffHeap::empty();
 
 /// Entry point.
-#[esp_hal::entry]
+#[cortex_m_rt::entry]
 fn main() -> ! {
     // ── Phase 1: Hardware Initialization ──────────────────────────
 
@@ -69,11 +70,10 @@ fn main() -> ! {
     static mut HEAP: [u8; config::HEAP_SIZE] = [0; config::HEAP_SIZE];
     unsafe { ALLOCATOR.init(HEAP.as_mut_ptr(), config::HEAP_SIZE) };
 
-    // Initialize logging
-    esp_println::logger::init_logger_from_env();
+    // Initialize logging via defmt-rtt
     log::info!("========================================");
     log::info!("  Weather Station Firmware v{}", config::FIRMWARE_VERSION);
-    log::info!("  ESP32-S3 | Rust Embedded");
+    log::info!("  STM32F407 | Rust Embedded");
     log::info!("========================================");
 
     // Load configuration from NVS (or use defaults)
@@ -83,11 +83,48 @@ fn main() -> ! {
 
     // ── Phase 2: Peripheral Initialization ────────────────────────
 
-    // In real firmware: let peripherals = esp_hal::init(esp_hal::Config::default());
-    // let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
-    // let i2c = I2c::new(peripherals.I2C0, io.pins.gpio8, io.pins.gpio9, 400.kHz());
-    // let spi = Spi::new(peripherals.SPI2, ...);
-    log::info!("HAL peripherals initialized");
+    // In real firmware:
+    // let dp = stm32f4xx_hal::pac::Peripherals::take().unwrap();
+    // let cp = cortex_m::Peripherals::take().unwrap();
+    //
+    // // Configure clocks: HSE 8MHz -> PLL -> 168 MHz SYSCLK
+    // let rcc = dp.RCC.constrain();
+    // let clocks = rcc.cfgr
+    //     .use_hse(8.MHz())
+    //     .sysclk(168.MHz())
+    //     .pclk1(42.MHz())
+    //     .pclk2(84.MHz())
+    //     .freeze();
+    //
+    // // GPIO ports
+    // let gpioa = dp.GPIOA.split();
+    // let gpiob = dp.GPIOB.split();
+    // let gpioc = dp.GPIOC.split();
+    // let gpiod = dp.GPIOD.split();
+    // let gpioe = dp.GPIOE.split();
+    //
+    // // I2C1 (PB6 SCL, PB7 SDA) — sensors
+    // let i2c1 = I2c::new(dp.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &clocks);
+    //
+    // // SPI1 (PA4-PA7) — SX1276 LoRa
+    // let spi1 = Spi::new(dp.SPI1, (gpioa.pa5, gpioa.pa6, gpioa.pa7), ...);
+    // let lora_cs = gpioa.pa4.into_push_pull_output();
+    //
+    // // SPI3 (PB3-PB5) — ATWINC1500 WiFi
+    // let spi3 = Spi::new(dp.SPI3, (gpiob.pb3, gpiob.pb4, gpiob.pb5), ...);
+    // let wifi_cs = gpioe.pe3.into_push_pull_output();
+    // let wifi_rst = gpioe.pe4.into_push_pull_output();
+    // let wifi_en = gpioe.pe6.into_push_pull_output();
+    //
+    // // USART2 (PA2/PA3) — RS485 Modbus, PA1 = DE
+    // // USART3 (PB10/PB11) — RN4870 BLE
+    // // USART1 (PA9/PA10) — Debug console
+    //
+    // // ADC1 — battery (PA0), wind (PC0), PM2.5 (PC1), soil (PC2/PC3)
+    // // TIM3 — wind/rain pulse (PB0/PB1)
+    // // GPIO — LEDs (PD0-PD2), DIP switch (PE0-PE1)
+    // // IWDG — watchdog
+    log::info!("STM32F407 HAL peripherals initialized");
 
     // ── Phase 3: Sensor Initialization ────────────────────────────
 
@@ -96,7 +133,10 @@ fn main() -> ! {
 
     // ── Phase 4: Communication Initialization ─────────────────────
 
-    let mut wifi = WifiManager::new();
+    // ATWINC1500 WiFi on SPI3
+    // In real firmware: let atwinc = Atwinc1500::new(spi3, wifi_cs, wifi_rst, wifi_en);
+    let atwinc = drivers::atwinc1500::Atwinc1500::new_default();
+    let mut wifi = WifiManager::new(atwinc);
     wifi.set_credentials(
         runtime_config.wifi_ssid.as_str(),
         runtime_config.wifi_password.as_str(),
@@ -105,13 +145,14 @@ fn main() -> ! {
         log::warn!("WiFi init failed: {} — will retry later", e);
     }
 
+    // RN4870 BLE on USART3
     let mut ble = BleServer::new(runtime_config.device_name.as_str());
     if let Err(e) = ble.init() {
         log::warn!("BLE init failed: {}", e);
     }
 
-    // LoRa initialized via SPI (would need real SPI handle)
-    // let mut lora = LoraRadio::new(spi, rst_pin, runtime_config.device_id);
+    // LoRa initialized via SPI1 (would need real SPI handle)
+    // let mut lora = LoraRadio::new(spi1, lora_cs, rst_pin, runtime_config.device_id);
 
     let device_id_str: heapless::String<16> =
         format_heapless!("ws-{:04X}", runtime_config.device_id);
@@ -132,6 +173,20 @@ fn main() -> ! {
     if let Err(e) = ota.validate_boot() {
         log::warn!("OTA boot validation failed: {} — may rollback", e);
     }
+
+    // Optional: W5500 Ethernet on SPI2
+    #[cfg(feature = "ethernet")]
+    let mut _ethernet = {
+        log::info!("Ethernet module enabled (W5500 on SPI2)");
+        // In real firmware: let w5500 = W5500::new(spi2, eth_cs, eth_rst);
+    };
+
+    // Optional: SIM7600E-H Cellular on UART4
+    #[cfg(feature = "cellular")]
+    let mut _cellular = {
+        log::info!("Cellular module enabled (SIM7600 on UART4)");
+        // In real firmware: let sim7600 = Sim7600::new(uart4);
+    };
 
     log::info!("Communication channels initialized");
 
@@ -188,12 +243,10 @@ fn main() -> ! {
     #[cfg(feature = "india")]
     let mut india_reading = industry::india::IndiaReading::default();
 
-    // ── Phase 5c: STM32 SCADA/Hybrid Mode ────────────────────────
+    // ── Phase 5c: SCADA/Hybrid Mode ──────────────────────────────
 
-    #[cfg(feature = "stm32")]
     let mut modbus_slave = {
-        use crate::comms::modbus_rtu::ModbusRtuSlave;
-        log::info!("STM32 SCADA module enabled (mode: {})", runtime_config.operating_mode.as_str());
+        log::info!("SCADA module enabled (mode: {})", runtime_config.operating_mode.as_str());
         let mut slave = ModbusRtuSlave::new(runtime_config.modbus_slave_addr);
         if let Err(e) = slave.init() {
             log::error!("Modbus RS485 init failed: {}", e);
@@ -201,13 +254,8 @@ fn main() -> ! {
         slave
     };
 
-    #[cfg(feature = "stm32")]
-    let mut mode_manager = {
-        use crate::core::mode_manager::ModeManager;
-        ModeManager::new(runtime_config.operating_mode)
-    };
+    let mut mode_manager = ModeManager::new(runtime_config.operating_mode);
 
-    #[cfg(feature = "stm32")]
     log::info!(
         "Operating mode: {} | Cloud: {} | SCADA: {}",
         runtime_config.operating_mode.as_str(),
@@ -324,11 +372,11 @@ fn main() -> ! {
                 }
 
                 TaskId::FeedWatchdog => {
-                    // In real firmware: wdt.feed();
+                    // In real firmware: wdt.feed() via IWDG
                 }
 
                 TaskId::ReadBattery => {
-                    // In real firmware: power.update_battery(adc.read(channel));
+                    // In real firmware: power.update_battery(adc.read(PA0));
                     log::debug!("Task: ReadBattery");
                 }
 
@@ -336,10 +384,6 @@ fn main() -> ! {
                 #[cfg(feature = "agriculture")]
                 TaskId::ReadAgriculture => {
                     // In real firmware: read soil moisture, soil temp, leaf wetness
-                    // let shallow = soil_moisture.read_shallow()?;
-                    // let deep = soil_moisture.read_deep()?;
-                    // let soil_t = soil_temp.read_temperature()?;
-                    // let leaf = leaf_wetness.read(uptime_ms)?;
                     log::debug!("Task: ReadAgriculture");
                 }
 
@@ -382,8 +426,6 @@ fn main() -> ! {
                 #[cfg(feature = "solar")]
                 TaskId::ReadSolar => {
                     // In real firmware: read pyranometer, panel temp
-                    // let irr = pyranometer.read()?;
-                    // let panel_t = panel_temp.read_temperature()?;
                     log::debug!("Task: ReadSolar");
                 }
 
@@ -427,55 +469,7 @@ fn main() -> ! {
                 #[cfg(feature = "india")]
                 TaskId::ReadIndia => {
                     // In real firmware: read PM2.5 sensor
-                    // let pm25 = pm25_sensor.read()?;
                     log::debug!("Task: ReadIndia");
-                }
-
-                // ── STM32 SCADA Tasks ──────────────────────
-                #[cfg(feature = "stm32")]
-                TaskId::PollModbus => {
-                    if mode_manager.should_run_scada() {
-                        modbus_slave.poll(uptime_ms);
-                        // Transmit any pending response
-                        if let Some(_response) = modbus_slave.take_response() {
-                            // In real firmware: write response bytes to USART2
-                            // set DE/RE high, transmit, wait for completion, set DE/RE low
-                        }
-                    }
-                }
-
-                #[cfg(feature = "stm32")]
-                TaskId::UpdateScadaRegisters => {
-                    if mode_manager.should_run_scada() {
-                        modbus_slave.update_input_registers(
-                            latest_reading.temperature_c,
-                            latest_reading.humidity_pct,
-                            latest_reading.pressure_hpa,
-                            latest_reading.wind_speed_kmh,
-                            latest_reading.wind_dir_deg,
-                            latest_reading.rain_rate_mm_hr,
-                            latest_reading.rain_mm,
-                            latest_reading.uv_index,
-                            latest_reading.light_lux,
-                            latest_reading.heat_index_c,
-                            latest_reading.dew_point_c,
-                            latest_reading.wind_chill_c,
-                            0, // battery_mv — from power manager in real firmware
-                            0, // battery_pct
-                        );
-                        mode_manager.report_scada_health(true);
-                    }
-                    log::debug!("Task: UpdateScadaRegisters");
-                }
-
-                #[cfg(feature = "stm32")]
-                TaskId::BridgeSync => {
-                    if mode_manager.should_run_cloud() {
-                        // In real firmware: send latest reading via USART3 bridge
-                        // to ESP32-S3 for MQTT/HTTP publishing
-                        // bridge.send_reading(&latest_reading);
-                        log::debug!("Task: BridgeSync — sending to ESP32");
-                    }
                 }
 
                 #[cfg(feature = "india")]
@@ -511,6 +505,66 @@ fn main() -> ! {
                     }
                     log::debug!("Task: ProcessIndia");
                 }
+
+                // ── SCADA Tasks ──────────────────────────────
+                TaskId::PollModbus => {
+                    if mode_manager.should_run_scada() {
+                        modbus_slave.poll(uptime_ms);
+                        // Transmit any pending response
+                        if let Some(_response) = modbus_slave.take_response() {
+                            // In real firmware: write response bytes to USART2
+                            // set DE/RE high, transmit, wait for completion, set DE/RE low
+                        }
+                    }
+                }
+
+                TaskId::UpdateScadaRegisters => {
+                    if mode_manager.should_run_scada() {
+                        modbus_slave.update_input_registers(
+                            latest_reading.temperature_c,
+                            latest_reading.humidity_pct,
+                            latest_reading.pressure_hpa,
+                            latest_reading.wind_speed_kmh,
+                            latest_reading.wind_dir_deg,
+                            latest_reading.rain_rate_mm_hr,
+                            latest_reading.rain_mm,
+                            latest_reading.uv_index,
+                            latest_reading.light_lux,
+                            latest_reading.heat_index_c,
+                            latest_reading.dew_point_c,
+                            latest_reading.wind_chill_c,
+                            0, // battery_mv — from power manager in real firmware
+                            0, // battery_pct
+                        );
+                        mode_manager.report_scada_health(true);
+                    }
+                    log::debug!("Task: UpdateScadaRegisters");
+                }
+
+                // ── Communication Module Polling ─────────────
+                TaskId::PollWifi => {
+                    wifi.poll(uptime_ms);
+                    mode_manager.report_wifi_health(wifi.is_connected());
+                }
+
+                TaskId::PollBle => {
+                    ble.poll(uptime_ms);
+                    mode_manager.report_ble_health(ble.is_connected() || ble.state() == comms::ble::BleState::Advertising);
+                }
+
+                #[cfg(feature = "cellular")]
+                TaskId::PollCellular => {
+                    // In real firmware: cellular.poll(uptime_ms);
+                    // mode_manager.report_cellular_health(cellular.is_connected());
+                    log::debug!("Task: PollCellular");
+                }
+
+                #[cfg(feature = "ethernet")]
+                TaskId::PollEthernet => {
+                    // In real firmware: ethernet.poll(uptime_ms);
+                    // mode_manager.report_ethernet_health(ethernet.is_linked());
+                    log::debug!("Task: PollEthernet");
+                }
             }
         }
 
@@ -527,8 +581,8 @@ fn main() -> ! {
         power.evaluate_sleep(uptime_ms, time_until_next);
 
         if power.deep_sleep_pending() {
-            log::info!("Entering deep sleep...");
-            // In real firmware: flush MQTT, send final LoRa, save NVS, deep_sleep()
+            log::info!("Entering standby...");
+            // In real firmware: flush MQTT, send final LoRa, save NVS, enter standby
         }
 
         if SYSTEM_ERROR.load(Ordering::Relaxed) {
@@ -538,7 +592,8 @@ fn main() -> ! {
 
         uptime_ms += config::MAIN_LOOP_TICK_MS;
 
-        // In real firmware: embassy_time::Timer::after_millis(MAIN_LOOP_TICK_MS).await
+        // In real firmware: cortex_m::asm::wfi() for proper low-power idle
+        // Or embassy_time::Timer::after_millis(MAIN_LOOP_TICK_MS).await
         for _ in 0..config::MAIN_LOOP_TICK_MS * 1000 {
             core::hint::spin_loop();
         }
@@ -600,7 +655,7 @@ fn init_sensors() -> SensorStatusMap {
 }
 
 /// Panic handler — logs the panic and halts. In real firmware this would
-/// save crash info to NVS and let the hardware watchdog trigger a reset.
+/// save crash info to flash and let the IWDG watchdog trigger a reset.
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
     log::error!("PANIC: {}", info);

@@ -8,7 +8,7 @@
     (title "Weather Station - Communication Interface")
     (date "2026-02-28")
     (rev "1.0")
-    (comment 1 "ESP32-S3 LoRa, UART Debug, USB-C, WiFi/BLE Antenna")
+    (comment 1 "STM32F407 LoRa, ATWINC1500 WiFi, RN4870 BLE, W5500 Ethernet, SIM7600 Cellular")
     (comment 2 "Sub-sheet: communication.kicad_sch")
   )
 

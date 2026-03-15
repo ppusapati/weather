@@ -49,14 +49,19 @@ pub enum TaskId {
     #[cfg(feature = "india")]
     ProcessIndia,
     /// Poll Modbus RTU slave (process pending frames).
-    #[cfg(feature = "stm32")]
     PollModbus,
     /// Update Modbus input registers with latest sensor data.
-    #[cfg(feature = "stm32")]
     UpdateScadaRegisters,
-    /// Send bridge heartbeat / data to ESP32-S3.
-    #[cfg(feature = "stm32")]
-    BridgeSync,
+    /// Poll ATWINC1500 WiFi module for events.
+    PollWifi,
+    /// Poll RN4870 BLE module for events.
+    PollBle,
+    /// Poll SIM7600 cellular module for events.
+    #[cfg(feature = "cellular")]
+    PollCellular,
+    /// Poll W5500 Ethernet module for events.
+    #[cfg(feature = "ethernet")]
+    PollEthernet,
 }
 
 /// A scheduled task.
@@ -75,8 +80,8 @@ pub struct ScheduledTask {
     pub last_duration_us: u32,
 }
 
-/// Maximum number of scheduled tasks (base 11 + industry 6 + stm32 3).
-const MAX_TASKS: usize = 20;
+/// Maximum number of scheduled tasks (base 11 + industry 6 + scada 2 + comm polls 4).
+const MAX_TASKS: usize = 24;
 
 /// Task scheduler.
 pub struct Scheduler {
@@ -245,8 +250,7 @@ impl Scheduler {
             });
         }
 
-        // STM32 SCADA tasks
-        #[cfg(feature = "stm32")]
+        // SCADA tasks
         {
             let _ = tasks.push(ScheduledTask {
                 id: TaskId::PollModbus,
@@ -264,10 +268,46 @@ impl Scheduler {
                 run_count: 0,
                 last_duration_us: 0,
             });
+        }
+
+        // Communication module polling tasks
+        {
             let _ = tasks.push(ScheduledTask {
-                id: TaskId::BridgeSync,
-                interval_ms: config::BRIDGE_HEARTBEAT_MS,
-                next_run_ms: 5000,
+                id: TaskId::PollWifi,
+                interval_ms: config::WIFI_POLL_INTERVAL_MS,
+                next_run_ms: 0,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::PollBle,
+                interval_ms: config::BLE_POLL_INTERVAL_MS,
+                next_run_ms: 50, // offset from WiFi
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
+
+        #[cfg(feature = "cellular")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::PollCellular,
+                interval_ms: config::CELLULAR_POLL_INTERVAL_MS,
+                next_run_ms: 0,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
+
+        #[cfg(feature = "ethernet")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::PollEthernet,
+                interval_ms: config::ETHERNET_POLL_INTERVAL_MS,
+                next_run_ms: 25, // offset from WiFi
                 enabled: true,
                 run_count: 0,
                 last_duration_us: 0,

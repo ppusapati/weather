@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.0] - 2026-03-15
+
+### Changed — Single-MCU Architecture
+- **BREAKING**: Migrated from dual-MCU (ESP32-S3 + STM32F407) to single-MCU (STM32F407VGT6 only)
+- Replaced ESP32-S3 built-in WiFi with **ATWINC1500** module on SPI3
+- Replaced ESP32-S3 built-in BLE with **RN4870** module on USART3
+- Added optional **W5500 Ethernet** on SPI2 (`--features ethernet`)
+- Added optional **SIM7600E-H Cellular** on UART4 (`--features cellular`)
+- Removed ESP32-S3 bridge protocol (USART3 now used for RN4870 BLE)
+- Removed `stm32` feature flag — STM32F407 is now the only target
+- Changed toolchain: `esp-hal` → `stm32f4xx-hal`, `esp-alloc` → `embedded-alloc`
+- Changed target: `xtensa-esp32s3-none-elf` → `thumbv7em-none-eabihf`
+- Changed flashing: `esptool` → `probe-rs` / `cargo-flash` via SWD
+- Changed power modes: Modem/Light/Deep sleep → Sleep (WFI) / Stop / Standby
+- Reduced heap from 384 KB to 48 KB (STM32 SRAM constraint)
+- Updated KiCad schematics, BOM, and symbol library for new modules
+- Updated all documentation to reflect single-MCU architecture
+
 ## [0.2.0] - 2026-02-27
 
 ### Added — Industry Modules
@@ -35,7 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.0] - 2026-02-27
 
 ### Added
-- Initial firmware implementation for ESP32-S3 weather station
+- Initial firmware implementation for weather station
 - **Sensors**: BME280 (temperature/humidity/pressure), AS5600 (wind direction), anemometer (wind speed), tipping bucket rain gauge, SI1145 (UV), BH1750 (ambient light)
 - **Communication channels**: WiFi, BLE 5.0 GATT, LoRa SX1276, MQTT v3.1.1, HTTP REST API, UART serial console
 - **Data pipeline**: 7-stage processing (acquisition, calibration, EMA filtering, validation, stuck sensor detection, derived values, packaging)

@@ -6,7 +6,7 @@
     (title "STM32F407 + RS485 SCADA Subsystem")
     (date "2026-03-15")
     (rev "1.0")
-    (comment 1 "Dual-MCU architecture: STM32F407 (sensors + SCADA) + ESP32-S3 (cloud)")
+    (comment 1 "Single-MCU architecture: STM32F407VGT6 (sensors + SCADA + connectivity)")
     (comment 2 "Operating modes: SCADA (Modbus RS485), Cloud (MQTT/HTTP), Hybrid (both)")
     (comment 3 "Industrial grade: -40C to +105C, IP65 enclosure, TVS protection")
   )

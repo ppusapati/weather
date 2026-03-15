@@ -68,7 +68,7 @@ impl UartConsole {
     fn print_banner(&self) {
         log::info!("========================================");
         log::info!("  Weather Station Firmware v{}", config::FIRMWARE_VERSION);
-        log::info!("  ESP32-S3 | Rust Embedded");
+        log::info!("  STM32F407 | Rust Embedded");
         log::info!("  Type 'help' for available commands");
         log::info!("========================================");
     }

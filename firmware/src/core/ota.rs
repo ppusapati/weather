@@ -161,8 +161,11 @@ impl OtaManager {
         // Update SHA-256
         self.sha256_state.update(data);
 
-        // Write to OTA flash partition
-        // In real firmware: esp_ota_write(handle, data)
+        // Write to OTA flash partition (STM32F407 sectors 8-11, 512 KB)
+        // In real firmware:
+        // stm32f4xx_hal::flash::FlashExt::unlock()
+        // flash.erase_sector(sector_num) if at sector boundary
+        // flash.program(addr, data)
 
         self.bytes_received += data.len() as u32;
         let progress = if self.total_bytes > 0 {
@@ -196,10 +199,11 @@ impl OtaManager {
         log::info!("OTA: SHA-256 verified, applying update");
         self.state = OtaState::Applying;
 
-        // In real firmware:
-        // 1. esp_ota_end(handle) — finalize OTA write
-        // 2. esp_ota_set_boot_partition(ota_partition) — switch boot target
-        // 3. esp_restart() — reboot into new firmware
+        // In real firmware (STM32F407 dual-bank OTA):
+        // 1. Verify SHA-256 of written data in OTA bank (sectors 8-11)
+        // 2. Set option bytes to swap flash banks (FLASH_OPTCR.BFB2)
+        // 3. System reset to boot from new bank
+        // cortex_m::peripheral::SCB::sys_reset()
 
         self.state = OtaState::PendingReboot;
         log::info!("OTA: update applied, reboot required");
@@ -209,10 +213,10 @@ impl OtaManager {
 
     /// Called on first boot after OTA update to validate the new firmware.
     pub fn validate_boot(&mut self) -> Result<()> {
-        // In real firmware:
+        // In real firmware (STM32F407):
         // 1. Run self-test (sensor probes, comm checks)
-        // 2. If OK: esp_ota_mark_app_valid() — prevent rollback
-        // 3. If FAIL: the bootloader will automatically rollback on next reboot
+        // 2. If OK: clear BFB2 swap flag in option bytes — lock in new firmware
+        // 3. If FAIL: reset without clearing — bootloader swaps back to old bank
 
         log::info!("OTA: boot validation passed, marking firmware as stable");
         self.state = OtaState::Idle;

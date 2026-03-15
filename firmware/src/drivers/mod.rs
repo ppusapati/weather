@@ -28,13 +28,16 @@ pub mod pyranometer;
 pub mod pm25;
 
 // STM32F407 MCU support
-#[cfg(feature = "stm32")]
 pub mod stm32f407;
 
-// Communication peripherals (STM32 only)
-#[cfg(feature = "stm32")]
+// Communication modules
+pub mod atwinc1500;
+pub mod rn4870;
+
+// Optional communication peripherals
+#[cfg(feature = "ethernet")]
 pub mod w5500;
-#[cfg(feature = "stm32")]
+#[cfg(feature = "cellular")]
 pub mod sim7600;
 
 use serde::{Deserialize, Serialize};

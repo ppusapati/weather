@@ -1,6 +1,6 @@
 # Weather Station System — India Development Report
 
-## Project: ESP32-S3 Weather Station with India Regional Module
+## Project: STM32F407 Weather Station with India Regional Module
 ## All costs in INR (1 USD ≈ ₹84)
 
 ---

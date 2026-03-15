@@ -6,17 +6,17 @@
 use crate::config;
 use crate::error::Result;
 
-/// Power operating mode.
+/// Power operating mode (STM32F407 low-power modes).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PowerMode {
     /// All systems active. ~160 mA.
     Active,
-    /// WiFi in duty-cycle mode. ~20 mA.
-    ModemSleep,
-    /// CPU paused, RAM retained. ~0.8 mA.
-    LightSleep,
-    /// Full power-off, RTC only. ~10 µA.
-    DeepSleep,
+    /// CPU in WFI (Wait For Interrupt), peripherals running. ~20 mA.
+    Sleep,
+    /// All clocks stopped except LSI, SRAM retained. ~20 µA.
+    Stop,
+    /// Everything off except RTC, wakeup via WKUP pin. ~2 µA.
+    Standby,
 }
 
 /// Battery status.
@@ -120,7 +120,7 @@ impl PowerManager {
     pub fn evaluate_sleep(&mut self, now_ms: u64, time_until_next_task_ms: u64) {
         // Check if deep sleep requested (critical battery)
         if self.deep_sleep_requested {
-            self.transition_to(PowerMode::DeepSleep);
+            self.transition_to(PowerMode::Standby);
             return;
         }
 
@@ -130,20 +130,20 @@ impl PowerManager {
             .map(|start| now_ms.saturating_sub(start))
             .unwrap_or(0);
 
-        // Decision tree for sleep mode
+        // Decision tree for STM32 sleep modes
         if self.battery.is_low && idle_duration > config::IDLE_MODEM_SLEEP_MS {
-            // Low battery: prefer light sleep
-            self.transition_to(PowerMode::LightSleep);
+            // Low battery: prefer Stop mode (all clocks off, SRAM retained)
+            self.transition_to(PowerMode::Stop);
         } else if time_until_next_task_ms > config::IDLE_LIGHT_SLEEP_MS
             && idle_duration > config::IDLE_LIGHT_SLEEP_MS
         {
-            // Long idle with no imminent tasks: light sleep
-            self.transition_to(PowerMode::LightSleep);
+            // Long idle with no imminent tasks: Stop mode
+            self.transition_to(PowerMode::Stop);
         } else if time_until_next_task_ms > config::IDLE_MODEM_SLEEP_MS
             && idle_duration > config::IDLE_MODEM_SLEEP_MS
         {
-            // Moderate idle: modem sleep
-            self.transition_to(PowerMode::ModemSleep);
+            // Moderate idle: Sleep mode (WFI)
+            self.transition_to(PowerMode::Sleep);
         }
     }
 
@@ -163,23 +163,37 @@ impl PowerManager {
 
         match new_mode {
             PowerMode::Active => {
-                // In real firmware: restore full clock, enable WiFi
+                // In real firmware: restore full clocks, re-initialize peripherals
+                // After waking from Stop: re-init ATWINC1500 (CHIP_EN high), RN4870 (RST release)
             }
-            PowerMode::ModemSleep => {
-                // In real firmware: WiFi goes to duty-cycle mode
+            PowerMode::Sleep => {
+                // STM32 Sleep mode: CPU halted, peripherals running
+                // In real firmware: cortex_m::asm::wfi()
+                // Wake on any interrupt (timer, USART, EXTI)
             }
-            PowerMode::LightSleep => {
-                // In real firmware: CPU paused, wake on timer or GPIO
-                // esp_hal::sleep::light_sleep(wake_sources)
+            PowerMode::Stop => {
+                // STM32 Stop mode: all clocks stopped, SRAM retained
+                // In real firmware:
+                // 1. Power off ATWINC1500 (CHIP_EN low)
+                // 2. Assert RN4870 RST
+                // 3. Deassert SIM7600 PWRKEY
+                // 4. Set SLEEPDEEP bit in SCB
+                // 5. Configure PWR for Stop mode
+                // 6. cortex_m::asm::wfi()
+                // Wake on EXTI (RTC alarm, GPIO)
             }
-            PowerMode::DeepSleep => {
-                // In real firmware: configure RTC wake timer, enter deep sleep
+            PowerMode::Standby => {
+                // STM32 Standby mode: everything off except RTC
                 // This will not return — device reboots on wake.
                 log::info!(
-                    "Power: entering deep sleep for {}s",
+                    "Power: entering standby for {}s",
                     config::DEEP_SLEEP_DURATION_S
                 );
-                // esp_hal::sleep::deep_sleep(duration)
+                // In real firmware:
+                // 1. Power off all external modules
+                // 2. Set SLEEPDEEP + PDDS bits
+                // 3. Enable RTC wakeup timer
+                // 4. cortex_m::asm::wfi()
             }
         }
 

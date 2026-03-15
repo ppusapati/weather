@@ -24,30 +24,30 @@ dependency rules: upper layers depend on lower layers, never the reverse.
 │                                                                     │
 │  BME280 │ AS5600 │ Anemometer │ Rain Gauge │ SI1145 │ BH1750      │
 ├─────────────────────────────────────────────────────────────────────┤
-│ LAYER 1 — HAL (esp-hal)                                             │
+│ LAYER 1 — HAL (stm32f4xx-hal)                                       │
 │                                                                     │
 │  I2C │ SPI │ ADC │ GPIO │ UART │ Timer │ RTC │ NVS                │
 ├─────────────────────────────────────────────────────────────────────┤
 │ LAYER 0 — HARDWARE                                                  │
 │                                                                     │
-│  ESP32-S3-WROOM-1 Module                                           │
-│  Xtensa LX7 Dual-Core @ 240 MHz                                   │
-│  512 KB SRAM + 8 MB PSRAM + 16 MB Flash                           │
+│  STM32F407VGT6 — ARM Cortex-M4F @ 168 MHz                          │
+│  192 KB SRAM (128 KB + 64 KB CCM) + 1 MB Flash                    │
+│  ATWINC1500 WiFi (SPI3) · RN4870 BLE (USART3)                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## 2. Dual-Core Task Allocation
+## 2. Single-Core Cooperative Scheduling
 
-The ESP32-S3 has two cores. We assign deterministic, time-sensitive work to
-Core 0 and network/IO-heavy work to Core 1.
+The STM32F407 runs a cooperative task scheduler on a single Cortex-M4F core.
+Tasks are time-sliced by priority, with ISRs handling time-critical pulse counting.
 
-| Core | Responsibility |
-|------|----------------|
-| **Core 0 (PRO)** | Sensor sampling, GPIO ISRs (wind/rain pulse counting), data fusion, power management |
-| **Core 1 (APP)** | WiFi, BLE, LoRa TX/RX, MQTT publish, HTTP server, OTA, UART console |
+| Task Group | Responsibility |
+|------------|----------------|
+| **Sensor tasks** | Sensor sampling, data fusion, calibration, alerts |
+| **Comms tasks** | WiFi poll, BLE poll, LoRa TX/RX, MQTT, HTTP, UART, Modbus RTU |
+| **System tasks** | Power management, OTA updates, watchdog feed, status reporting |
 
-Inter-core communication uses a lock-free SPSC (Single Producer Single Consumer)
-ring buffer in shared SRAM.
+All tasks share a single execution context with cooperative yielding.
 
 ## 3. Data Flow
 
@@ -136,9 +136,9 @@ weather/{device_id}/ota            — OTA control channel
 | Mode | Current Draw | Duration | Trigger |
 |------|-------------|----------|---------|
 | **Active** | ~170 mA | During sampling + TX | Scheduler wake |
-| **Modem sleep** | ~20 mA | Between WiFi TX | Auto after TX |
-| **Light sleep** | ~0.8 mA | Idle periods | Configurable |
-| **Deep sleep** | ~12 µA | Extended idle | Battery < 20% |
+| **Sleep (WFI)** | ~20 mA | Between tasks | Auto after TX |
+| **Stop** | ~20 µA | Idle periods | Configurable |
+| **Standby** | ~2 µA | Extended idle | Battery < 20% |
 
 ### 5.2 Battery Monitoring
 

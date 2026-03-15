@@ -11,6 +11,5 @@ pub mod ota;
 pub mod power;
 pub mod scheduler;
 
-// Mode manager for dual-MCU SCADA/Cloud/Hybrid operation
-#[cfg(feature = "stm32")]
+// Mode manager for SCADA/Cloud/Hybrid operation
 pub mod mode_manager;

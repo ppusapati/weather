@@ -1,12 +1,14 @@
-/// BLE GATT server for the weather station.
+/// BLE GATT server wrapping the RN4870 module on USART3.
 ///
 /// Implements:
 /// - Environmental Sensing service (0x181A): temperature, humidity, pressure
 /// - Custom Weather service (0xFFE0): wind, rain, UV, light
 /// - Configuration service (0xFFE1): WiFi provisioning, sampling rate
+///
+/// Delegates all hardware operations to the RN4870 driver.
 
-use crate::config;
 use crate::core::data_pipeline::WeatherReading;
+use crate::drivers::rn4870::{BleModuleState, Rn4870};
 use crate::error::{Error, Result};
 use heapless::String;
 
@@ -42,8 +44,9 @@ pub struct WifiProvisionData {
     pub password: String<64>,
 }
 
-/// BLE GATT server.
+/// BLE GATT server wrapping the RN4870 driver.
 pub struct BleServer {
+    driver: Rn4870,
     state: BleState,
     device_name: String<32>,
     /// Latest reading cached for GATT reads.
@@ -57,6 +60,7 @@ pub struct BleServer {
 impl BleServer {
     pub fn new(device_name: &str) -> Self {
         Self {
+            driver: Rn4870::new(),
             state: BleState::Uninitialized,
             device_name: String::try_from(device_name).unwrap_or_default(),
             cached_reading: None,
@@ -65,29 +69,53 @@ impl BleServer {
         }
     }
 
-    /// Initialize the BLE stack and register GATT services.
+    /// Initialize the BLE stack and register GATT services via RN4870.
     pub fn init(&mut self) -> Result<()> {
-        log::info!("BLE: initializing GATT server");
+        log::info!("BLE: initializing RN4870 GATT server");
 
-        // In real firmware:
-        // 1. Initialize BLE stack
-        // 2. Set device name
-        // 3. Register Environmental Sensing service (0x181A)
+        // Initialize the RN4870 module (reset, configure, start advertising)
+        self.driver.init();
+
+        // Register GATT services via RN4870 AT commands:
+        // 1. Environmental Sensing service (0x181A)
         //    - Temperature (0x2A6E): Read, Notify
         //    - Humidity (0x2A6F): Read, Notify
         //    - Pressure (0x2A6D): Read, Notify
-        // 4. Register Custom Weather service (0xFFE0)
+        // 2. Custom Weather service (0xFFE0)
         //    - Wind Speed, Wind Dir, Rain, UV, Light: Read, Notify
-        // 5. Register Configuration service (0xFFE1)
-        //    - Sampling Rate: Read, Write
+        // 3. Configuration service (0xFFE1)
         //    - WiFi SSID: Write
         //    - WiFi Password: Write
         //    - Device Name: Read, Write
-        //    - WiFi Status: Read, Notify
 
         self.state = BleState::Advertising;
-        log::info!("BLE: advertising as '{}'", self.device_name.as_str());
+        log::info!("BLE: RN4870 advertising as '{}'", self.device_name.as_str());
         Ok(())
+    }
+
+    /// Poll the RN4870 for events. Call from the scheduler's PollBle task.
+    pub fn poll(&mut self, now_ms: u64) {
+        self.driver.poll(now_ms);
+
+        // Synchronize our state with the driver's state
+        match self.driver.module_state() {
+            BleModuleState::Connected => {
+                if self.state != BleState::Connected {
+                    self.on_connect();
+                }
+            }
+            BleModuleState::Advertising => {
+                if self.state == BleState::Connected {
+                    self.on_disconnect();
+                }
+            }
+            _ => {}
+        }
+
+        // Check for incoming GATT write data from the driver
+        if let Some((handle, data)) = self.driver.take_gatt_write() {
+            self.handle_write(handle, &data);
+        }
     }
 
     /// Start advertising.
@@ -95,6 +123,7 @@ impl BleServer {
         if self.state == BleState::Uninitialized {
             return Err(Error::BleInitFailed);
         }
+        self.driver.start_advertising();
         self.state = BleState::Advertising;
         log::info!("BLE: advertising started");
         Ok(())
@@ -105,6 +134,8 @@ impl BleServer {
         self.cached_reading = Some(reading.clone());
 
         if self.state == BleState::Connected && self.notifications_enabled {
+            // Update weather data on the RN4870 module via SHW commands
+            self.driver.update_weather_data(reading);
             self.send_notifications(reading)?;
         }
 
@@ -117,7 +148,7 @@ impl BleServer {
         if let Some(temp) = reading.temperature_c {
             let value = (temp * 100.0) as i16;
             log::debug!("BLE: notify temperature = {}", value);
-            // In real firmware: gatts_notify(conn_handle, temp_handle, &value.to_le_bytes())
+            // RN4870: SHW,<temp_handle>,<hex value>
         }
 
         if let Some(humidity) = reading.humidity_pct {
@@ -153,7 +184,7 @@ impl BleServer {
         Ok(())
     }
 
-    /// Handle a GATT write event.
+    /// Handle a GATT write event from RN4870.
     pub fn handle_write(&mut self, char_uuid: u16, data: &[u8]) {
         // WiFi SSID write (0xFFE1-0010)
         if char_uuid == 0x0010 {

@@ -1,11 +1,11 @@
 # Weather Station Firmware
 
-## ESP32-S3 Weather Station — Embedded Rust Firmware
+## STM32F407 Weather Station — Embedded Rust Firmware
 
-A production-grade weather station firmware written in Rust targeting the **ESP32-S3** MCU.
+A production-grade weather station firmware written in Rust targeting the **STM32F407VGT6** MCU.
 It collects environmental data from multiple sensors and transmits readings over
-**WiFi, BLE, LoRa, UART, MQTT, and HTTP** — covering every practical communication
-channel available on the platform.
+**WiFi (ATWINC1500), BLE (RN4870), LoRa, UART, MQTT, and HTTP** — with optional
+Ethernet (W5500) and Cellular (SIM7600E-H) connectivity.
 
 ---
 
@@ -36,30 +36,31 @@ channel available on the platform.
 │  │ I2C  │ │ SPI  │ │ ADC  │ │ GPIO │ │ UART │ │ Timer │  │
 │  └──────┘ └──────┘ └──────┘ └──────┘ └──────┘ └───────┘  │
 ├─────────────────────────────────────────────────────────────┤
-│                    ESP32-S3 HARDWARE                        │
-│  Xtensa LX7 Dual-Core · 512KB SRAM · WiFi · BLE 5.0      │
+│                   STM32F407 HARDWARE                        │
+│  ARM Cortex-M4F @ 168 MHz · 192KB SRAM · 1MB Flash        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## MCU Selection — ESP32-S3
+## MCU Selection — STM32F407VGT6
 
-| Criterion | ESP32-S3 |
+| Criterion | STM32F407VGT6 |
 |---|---|
-| CPU | Dual-core Xtensa LX7 @ 240 MHz |
-| RAM | 512 KB SRAM + 8 MB PSRAM |
-| Flash | 16 MB (quad SPI) |
-| WiFi | 802.11 b/g/n |
-| Bluetooth | BLE 5.0 |
-| ADC | 2x 12-bit SAR, 20 channels |
-| I2C / SPI / UART | 2 / 4 / 3 |
-| GPIO | 45 programmable |
-| Deep sleep | ~10 uA |
-| Rust support | `esp-hal` + `esp-idf-hal` (mature) |
+| CPU | ARM Cortex-M4F @ 168 MHz (with FPU) |
+| RAM | 192 KB SRAM (128 KB + 64 KB CCM) |
+| Flash | 1 MB internal |
+| WiFi | ATWINC1500 module (SPI3) |
+| Bluetooth | RN4870 BLE 5.0 module (USART3) |
+| ADC | 3x 12-bit SAR, 16 channels |
+| I2C / SPI / UART | 3 / 3 / 4 |
+| GPIO | 82 programmable |
+| Standby | ~2 µA |
+| Temp range | -40°C to +105°C (Industrial) |
+| Rust support | `stm32f4xx-hal` + `cortex-m-rt` (mature) |
 
-**Why ESP32-S3?** Best-in-class Rust embedded support via `esp-rs`, built-in WiFi + BLE
-eliminates external modules, sufficient ADC channels for all analog sensors, and SPI
-available for LoRa (SX1276). The dual-core architecture lets us dedicate one core to
-sensor acquisition and the other to communication.
+**Why STM32F407?** Industrial temperature range for outdoor deployment, hardware FPU for
+sensor math, three SPI buses for concurrent LoRa/Ethernet/WiFi, dedicated UART for each
+communication module, and excellent Rust embedded-hal support. Single-MCU architecture
+simplifies firmware (one codebase, one toolchain).
 
 ## Sensors
 
@@ -93,10 +94,12 @@ The firmware supports optional industry-specific extensions via Cargo features:
 | `solar` | Photovoltaic Monitoring | Pyranometer, panel temp (×2), power meter | Irradiance, yield estimation, peak sun hours, performance ratio, soiling loss, cloud transients |
 | `india` | Indian Regional | PM2.5 particulate sensor | Monsoon tracking, IMD heat wave alerts, cyclone detection, NAQI air quality, IST timezone, IN865 LoRa |
 | `all-industries` | All | All above | All above |
-| `stm32` | SCADA/Industrial | STM32F407 + MAX3485 RS485 | Modbus RTU slave, SCADA/Cloud/Hybrid modes |
-| `full-system` | Everything | All sensors + STM32 + RS485 | All analytics + SCADA + Cloud |
+| `cellular` | Remote Sites | SIM7600E-H LTE modem | Cellular uplink for remote stations |
+| `ethernet` | Industrial | W5500 wired Ethernet | Reliable wired connectivity + Modbus TCP |
+| `all-comms` | All Comms | Cellular + Ethernet | All communication channels |
+| `full-system` | Everything | All sensors + all comms | All analytics + SCADA + Cloud |
 
-### Operating Modes (with `stm32` feature)
+### Operating Modes
 
 | Mode | Cloud (MQTT/HTTP) | SCADA (Modbus RS485) | Selection |
 |------|:-----------------:|:--------------------:|-----------|
@@ -117,10 +120,13 @@ cargo build --release --features india
 # Build with all industry modules
 cargo build --release --features all-industries
 
-# Build with SCADA support (STM32F407 + Modbus RS485)
-cargo build --release --features stm32
+# Build with cellular modem support
+cargo build --release --features cellular
 
-# Full system: all industries + SCADA
+# Build with Ethernet support
+cargo build --release --features ethernet
+
+# Full system: all industries + all comms
 cargo build --release --features full-system
 ```
 
@@ -132,17 +138,17 @@ See [docs/INDUSTRY_AGRICULTURE.md](docs/INDUSTRY_AGRICULTURE.md),
 ## Building
 
 ```bash
-# Install Rust + ESP toolchain
+# Install Rust + ARM toolchain
 rustup install nightly
-cargo install espup
-espup install
+rustup target add thumbv7em-none-eabihf
+cargo install probe-rs-tools
 
 # Build (base weather station)
 cd firmware
-cargo build --release --target xtensa-esp32s3-none-elf
+cargo build --release --target thumbv7em-none-eabihf
 
-# Flash
-espflash flash target/xtensa-esp32s3-none-elf/release/weather-station
+# Flash via SWD (ST-Link V2)
+probe-rs run --chip STM32F407VGTx target/thumbv7em-none-eabihf/release/weather-station
 ```
 
 ## Project Structure
@@ -184,7 +190,9 @@ weather/
 │       │   ├── leaf_wetness.rs   (agriculture)
 │       │   ├── pyranometer.rs    (solar)
 │       │   ├── pm25.rs           (india)
-│       │   └── stm32f407.rs     (stm32 — MCU HAL + pin map)
+│       │   ├── stm32f407.rs     (MCU HAL + pin map)
+│       │   ├── atwinc1500.rs   (WiFi SPI driver)
+│       │   └── rn4870.rs       (BLE UART driver)
 │       ├── comms/
 │       │   ├── mod.rs
 │       │   ├── wifi.rs
@@ -193,14 +201,14 @@ weather/
 │       │   ├── uart_console.rs
 │       │   ├── mqtt.rs
 │       │   ├── http.rs
-│       │   └── modbus_rtu.rs    (stm32 — Modbus RS485 slave)
+│       │   └── modbus_rtu.rs    (Modbus RS485 slave)
 │       ├── core/
 │       │   ├── mod.rs
 │       │   ├── scheduler.rs
 │       │   ├── data_pipeline.rs
 │       │   ├── power.rs
 │       │   ├── ota.rs
-│       │   └── mode_manager.rs  (stm32 — SCADA/Cloud/Hybrid)
+│       │   └── mode_manager.rs  (SCADA/Cloud/Hybrid)
 │       ├── industry/
 │       │   ├── mod.rs
 │       │   ├── agriculture.rs    (agriculture)

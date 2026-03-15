@@ -12,7 +12,9 @@
 ///
 /// | Component | Industrial Part | Temp Range | Notes |
 /// |-----------|----------------|------------|-------|
-/// | MCU | ESP32-S3-WROOM-1-N16R8**I** | -40°C to +85°C | Industrial suffix "I" |
+/// | MCU | STM32F407VGT6 | -40°C to +105°C | ARM Cortex-M4F, 168 MHz |
+/// | WiFi Module | ATWINC1500-MR210PB | -40°C to +85°C | SPI, integrated TCP/IP |
+/// | BLE Module | RN4870-I/RM | -40°C to +85°C | UART, BLE 5.0, integrated GATT |
 /// | Temp/Hum/Pressure | BME280 (Bosch) | -40°C to +85°C | Automotive-qualified available |
 /// | Wind Direction | AS5600-ASOM | -40°C to +85°C | Industrial magnetic encoder |
 /// | UV Sensor | SI1145-A10-GMR | -40°C to +85°C | Industrial UV/ALS/proximity |
@@ -24,7 +26,6 @@
 /// | Voltage Regulator | TPS63020 | -40°C to +85°C | Wide input buck-boost |
 /// | TVS/ESD Protection | TPD4E05U06 | -40°C to +125°C | On all external lines |
 /// | Conformal Coating | Dow Corning 1-2577 | -65°C to +200°C | Moisture/salt spray |
-/// | STM32 MCU | STM32F407VGT6 | -40°C to +105°C | ARM Cortex-M4F, 168 MHz |
 /// | RS485 Transceiver | MAX3485ESA+ | -40°C to +85°C | Half-duplex, 10 Mbps |
 /// | RS485 TVS | SMBJ6.0CA | -40°C to +125°C | Bidirectional TVS on A/B |
 /// | RS485 Connector | Phoenix MC 4-pin | -40°C to +105°C | Pluggable terminal block |
@@ -33,35 +34,35 @@
 
 use serde::{Deserialize, Serialize};
 
-// ---------- Hardware Pin Assignments ----------
+// ---------- Hardware Pin Assignments (STM32F407VGT6) ----------
 
-/// I2C bus pins
-pub const I2C_SDA_PIN: u8 = 8;
-pub const I2C_SCL_PIN: u8 = 9;
+/// I2C1 bus pins (PB7 SDA, PB6 SCL) — sensor bus
+pub const I2C_SDA_PIN: u8 = 23; // PB7
+pub const I2C_SCL_PIN: u8 = 22; // PB6
 pub const I2C_FREQ_HZ: u32 = 400_000;
 
-/// SPI bus pins (LoRa SX1276)
-pub const SPI_MOSI_PIN: u8 = 10;
-pub const SPI_MISO_PIN: u8 = 11;
-pub const SPI_SCK_PIN: u8 = 12;
-pub const LORA_CS_PIN: u8 = 13;
-pub const LORA_RST_PIN: u8 = 14;
-pub const LORA_DIO0_PIN: u8 = 15;
+/// SPI1 bus pins (LoRa SX1276)
+pub const SPI_MOSI_PIN: u8 = 7;  // PA7
+pub const SPI_MISO_PIN: u8 = 6;  // PA6
+pub const SPI_SCK_PIN: u8 = 5;   // PA5
+pub const LORA_CS_PIN: u8 = 4;   // PA4
+pub const LORA_RST_PIN: u8 = 36; // PC4
+pub const LORA_DIO0_PIN: u8 = 37; // PC5
 
-/// GPIO interrupt pins
-pub const WIND_SPEED_PIN: u8 = 4;
-pub const RAIN_GAUGE_PIN: u8 = 5;
+/// GPIO interrupt pins (TIM3 channels)
+pub const WIND_SPEED_PIN: u8 = 16; // PB0
+pub const RAIN_GAUGE_PIN: u8 = 17; // PB1
 
-/// ADC pins
-pub const BATTERY_ADC_PIN: u8 = 6;
+/// ADC1 pins
+pub const BATTERY_ADC_PIN: u8 = 0; // PA0
 
-/// UART pins
-pub const UART_TX_PIN: u8 = 43;
-pub const UART_RX_PIN: u8 = 44;
+/// USART1 pins — debug console
+pub const UART_TX_PIN: u8 = 9;  // PA9
+pub const UART_RX_PIN: u8 = 10; // PA10
 pub const UART_BAUD_RATE: u32 = 115_200;
 
-/// Status LED
-pub const LED_PIN: u8 = 2;
+/// Status LEDs
+pub const LED_PIN: u8 = 48; // PD0
 
 // ---------- I2C Addresses ----------
 
@@ -149,10 +150,11 @@ pub const MQTT_BUFFER_SIZE: usize = 1000;
 pub const HTTP_PORT: u16 = 80;
 pub const HTTP_MAX_CONNECTIONS: usize = 4;
 
-// ---------- Flash Storage ----------
+// ---------- Flash Storage (STM32F407 internal flash) ----------
 
-pub const FLASH_DATA_START: u32 = 0x00819000;
-pub const FLASH_DATA_SIZE: u32 = 0x007E7000; // ~7.9 MB
+/// Sector 4 (64 KB at 0x0801_0000) used for data storage.
+pub const FLASH_DATA_START: u32 = 0x0801_0000;
+pub const FLASH_DATA_SIZE: u32 = 0x0001_0000; // 64 KB
 pub const FLASH_RECORD_SIZE: usize = 64;
 
 /// Minimum interval between flash writes (ms) to limit wear.
@@ -164,8 +166,8 @@ pub const READING_BUFFER_CAPACITY: usize = 64;
 
 // ---------- Heap ----------
 
-/// Heap allocator size in bytes (384 KB).
-pub const HEAP_SIZE: usize = 384 * 1024;
+/// Heap allocator size in bytes (48 KB — STM32F407 has 128 KB SRAM total).
+pub const HEAP_SIZE: usize = 48 * 1024;
 
 // ---------- Main Loop ----------
 
@@ -413,40 +415,44 @@ pub const PM25_SAMPLE_COUNT: u8 = 10;
 // ---------- STM32F407 + SCADA Configuration ----------
 
 /// STM32F407 system clock frequency (Hz).
-#[cfg(feature = "stm32")]
 pub const STM32_SYSCLK_HZ: u32 = 168_000_000;
 
 /// Modbus RS485 default baud rate.
-#[cfg(feature = "stm32")]
 pub const MODBUS_BAUD_RATE: u32 = 9600;
 
 /// Modbus RS485 default slave address (1–247).
-#[cfg(feature = "stm32")]
 pub const MODBUS_DEFAULT_ADDR: u8 = 1;
 
 /// Modbus inter-frame silence T3.5 (µs) at 9600 baud.
-#[cfg(feature = "stm32")]
 pub const MODBUS_T35_US: u32 = 4_063;
 
-/// ESP32 bridge UART baud rate.
-#[cfg(feature = "stm32")]
-pub const BRIDGE_BAUD_RATE: u32 = 921_600;
-
 /// SCADA register update interval (ms) — how often input registers are refreshed.
-#[cfg(feature = "stm32")]
 pub const SCADA_UPDATE_INTERVAL_MS: u64 = 1_000;
 
 /// IWDG watchdog timeout (ms).
-#[cfg(feature = "stm32")]
 pub const STM32_IWDG_TIMEOUT_MS: u32 = 4_000;
 
-/// Bridge heartbeat interval (ms).
-#[cfg(feature = "stm32")]
-pub const BRIDGE_HEARTBEAT_MS: u64 = 5_000;
+// ---------- Communication Module Configuration ----------
 
-/// Bridge heartbeat timeout — ESP32 considered offline after this (ms).
-#[cfg(feature = "stm32")]
-pub const BRIDGE_TIMEOUT_MS: u64 = 15_000;
+/// ATWINC1500 SPI clock frequency (Hz).
+pub const ATWINC1500_SPI_CLOCK_HZ: u32 = 48_000_000;
+
+/// RN4870 BLE module UART baud rate.
+pub const RN4870_BAUD_RATE: u32 = 115_200;
+
+/// WiFi module polling interval (ms).
+pub const WIFI_POLL_INTERVAL_MS: u64 = 100;
+
+/// BLE module polling interval (ms).
+pub const BLE_POLL_INTERVAL_MS: u64 = 100;
+
+/// Cellular module polling interval (ms).
+#[cfg(feature = "cellular")]
+pub const CELLULAR_POLL_INTERVAL_MS: u64 = 500;
+
+/// Ethernet module polling interval (ms).
+#[cfg(feature = "ethernet")]
+pub const ETHERNET_POLL_INTERVAL_MS: u64 = 100;
 
 // ---------- Firmware Info ----------
 
@@ -516,13 +522,14 @@ pub struct RuntimeConfig {
     #[cfg(feature = "india")]
     pub india_crop_type: heapless::String<16>,
 
-    // STM32 + SCADA config
-    #[cfg(feature = "stm32")]
+    // SCADA config
     pub operating_mode: crate::drivers::stm32f407::OperatingMode,
-    #[cfg(feature = "stm32")]
     pub modbus_slave_addr: u8,
-    #[cfg(feature = "stm32")]
     pub modbus_baud_rate: u32,
+
+    // Cellular config
+    #[cfg(feature = "cellular")]
+    pub cellular_apn: heapless::String<32>,
 }
 
 impl RuntimeConfig {
@@ -577,17 +584,14 @@ impl RuntimeConfig {
                 self.india_gdd_base_temp_c = GDD_BASE_TEMP_RICE_INDIA;
             }
         }
-        #[cfg(feature = "stm32")]
-        {
-            if self.modbus_slave_addr == 0 || self.modbus_slave_addr > 247 {
-                log::warn!("Config: invalid Modbus addr {}, resetting to {}", self.modbus_slave_addr, MODBUS_DEFAULT_ADDR);
-                self.modbus_slave_addr = MODBUS_DEFAULT_ADDR;
-            }
-            let valid_bauds = [2400, 4800, 9600, 19200, 38400];
-            if !valid_bauds.contains(&self.modbus_baud_rate) {
-                log::warn!("Config: invalid Modbus baud {}, resetting to {}", self.modbus_baud_rate, MODBUS_BAUD_RATE);
-                self.modbus_baud_rate = MODBUS_BAUD_RATE;
-            }
+        if self.modbus_slave_addr == 0 || self.modbus_slave_addr > 247 {
+            log::warn!("Config: invalid Modbus addr {}, resetting to {}", self.modbus_slave_addr, MODBUS_DEFAULT_ADDR);
+            self.modbus_slave_addr = MODBUS_DEFAULT_ADDR;
+        }
+        let valid_bauds = [2400, 4800, 9600, 19200, 38400];
+        if !valid_bauds.contains(&self.modbus_baud_rate) {
+            log::warn!("Config: invalid Modbus baud {}, resetting to {}", self.modbus_baud_rate, MODBUS_BAUD_RATE);
+            self.modbus_baud_rate = MODBUS_BAUD_RATE;
         }
     }
 }
@@ -637,12 +641,11 @@ impl Default for RuntimeConfig {
             india_gdd_base_temp_c: GDD_BASE_TEMP_RICE_INDIA,
             #[cfg(feature = "india")]
             india_crop_type: heapless::String::new(),
-            #[cfg(feature = "stm32")]
             operating_mode: crate::drivers::stm32f407::OperatingMode::Hybrid,
-            #[cfg(feature = "stm32")]
             modbus_slave_addr: MODBUS_DEFAULT_ADDR,
-            #[cfg(feature = "stm32")]
             modbus_baud_rate: MODBUS_BAUD_RATE,
+            #[cfg(feature = "cellular")]
+            cellular_apn: heapless::String::new(),
         }
     }
 }

@@ -1,9 +1,11 @@
-/// WiFi manager for ESP32-S3.
+/// WiFi manager wrapping the ATWINC1500 module on SPI3.
 ///
 /// Handles connection, reconnection with exponential backoff,
 /// NTP time synchronization, and connection state tracking.
+/// Delegates all hardware operations to the ATWINC1500 driver.
 
 use crate::config;
+use crate::drivers::atwinc1500::{Atwinc1500, WifiModuleState};
 use crate::error::{Error, Result};
 use crate::utils::fmt::HeaplessWriter;
 use heapless::String;
@@ -37,8 +39,9 @@ pub struct WifiInfo {
     pub ssid: String<32>,
 }
 
-/// WiFi manager handling connection lifecycle.
-pub struct WifiManager {
+/// WiFi manager wrapping the ATWINC1500 SPI driver.
+pub struct WifiManager<SPI, CS, RST, EN> {
+    driver: Atwinc1500<SPI, CS, RST, EN>,
     state: WifiState,
     retry_count: u8,
     max_retries: u8,
@@ -49,15 +52,10 @@ pub struct WifiManager {
     ntp_synced: bool,
 }
 
-impl Default for WifiManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl WifiManager {
-    pub fn new() -> Self {
+impl<SPI, CS, RST, EN> WifiManager<SPI, CS, RST, EN> {
+    pub fn new(driver: Atwinc1500<SPI, CS, RST, EN>) -> Self {
         Self {
+            driver,
             state: WifiState::Disconnected,
             retry_count: 0,
             max_retries: config::WIFI_RETRY_MAX,
@@ -88,12 +86,13 @@ impl WifiManager {
             return Ok(());
         }
 
-        log::info!("WiFi: initializing, SSID={}", self.ssid.as_str());
+        log::info!("WiFi: initializing ATWINC1500, SSID={}", self.ssid.as_str());
+        self.driver.init();
         self.state = WifiState::Connecting;
         self.connect()
     }
 
-    /// Attempt to connect to the configured AP.
+    /// Attempt to connect to the configured AP via ATWINC1500.
     fn connect(&mut self) -> Result<()> {
         log::info!(
             "WiFi: connecting to '{}' (attempt {}/{})",
@@ -102,12 +101,38 @@ impl WifiManager {
             self.max_retries
         );
 
-        // In real firmware: esp_wifi::wifi::WiFi::connect()
-        // The event handler calls handle_event() when the result is known.
+        // Delegate connection to ATWINC1500 driver
+        self.driver.connect(self.ssid.as_str(), self.password.as_str());
         Ok(())
     }
 
-    /// Handle a WiFi event (called from WiFi event loop).
+    /// Poll the ATWINC1500 for events. Call from the scheduler's PollWifi task.
+    pub fn poll(&mut self, now_ms: u64) {
+        self.driver.poll(now_ms);
+
+        // Synchronize our state with the driver's state
+        match self.driver.module_state() {
+            WifiModuleState::Connected => {
+                if self.state != WifiState::Connected {
+                    let ip = self.driver.ip_address().unwrap_or([0; 4]);
+                    self.handle_event(WifiEvent::Connected { ip });
+                }
+            }
+            WifiModuleState::Disconnected => {
+                if self.state == WifiState::Connected {
+                    self.handle_event(WifiEvent::Disconnected);
+                }
+            }
+            WifiModuleState::Error => {
+                if self.state == WifiState::Connecting || self.state == WifiState::Reconnecting {
+                    self.handle_event(WifiEvent::ConnectionFailed);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Handle a WiFi event (called from poll or external event loop).
     pub fn handle_event(&mut self, event: WifiEvent) {
         match event {
             WifiEvent::Connected { ip } => {
@@ -116,7 +141,7 @@ impl WifiManager {
                 self.backoff_ms = config::WIFI_BACKOFF_INITIAL_MS;
                 self.info = Some(WifiInfo {
                     ip_address: ip,
-                    rssi_dbm: 0,
+                    rssi_dbm: self.driver.rssi().unwrap_or(0),
                     channel: 0,
                     ssid: self.ssid.clone(),
                 });
@@ -187,7 +212,31 @@ impl WifiManager {
 
     /// Get current RSSI (if connected).
     pub fn rssi(&self) -> Option<i8> {
-        self.info.as_ref().map(|i| i.rssi_dbm)
+        if self.is_connected() {
+            self.driver.rssi()
+        } else {
+            None
+        }
+    }
+
+    /// Open a TCP connection via the ATWINC1500's built-in TCP/IP stack.
+    pub fn open_tcp(&mut self, host: &str, port: u16) -> Result<u8> {
+        self.driver.open_tcp(host, port).map_err(|_| Error::WifiConnectionFailed)
+    }
+
+    /// Send data on a TCP socket.
+    pub fn send_tcp(&mut self, socket_id: u8, data: &[u8]) -> Result<()> {
+        self.driver.send_tcp(socket_id, data).map_err(|_| Error::WifiConnectionFailed)
+    }
+
+    /// Receive data from a TCP socket.
+    pub fn recv_tcp(&mut self, socket_id: u8, buf: &mut [u8]) -> Result<usize> {
+        self.driver.recv_tcp(socket_id, buf).map_err(|_| Error::WifiConnectionFailed)
+    }
+
+    /// Close a TCP socket.
+    pub fn close_tcp(&mut self, socket_id: u8) {
+        self.driver.close_tcp(socket_id);
     }
 
     /// Format IP address as string.

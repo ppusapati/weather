@@ -2,37 +2,36 @@
 
 ## Overview
 
-The weather station supports a dual-MCU architecture with the **STM32F407VGT6**
-handling all sensor acquisition and SCADA (Modbus RS485) communication, while
-the **ESP32-S3** handles cloud connectivity (WiFi, BLE, MQTT, HTTP, LoRa).
-
-Enable with `--features stm32`:
+The weather station uses a single-MCU architecture with the **STM32F407VGT6**
+handling all sensor acquisition, SCADA (Modbus RS485), and cloud connectivity
+via external modules: ATWINC1500 (WiFi), RN4870 (BLE), W5500 (Ethernet),
+SIM7600E-H (Cellular).
 
 ```bash
 # SCADA + all industry modules
-cargo build --release --features "stm32,all-industries"
+cargo build --release --features all-industries
 
-# Full system (all features)
+# Full system (all features + all comms)
 cargo build --release --features full-system
 ```
 
 ## Architecture
 
 ```
-┌─────────────────────────────┐     USART3 (921.6k)     ┌────────────────────────┐
-│     STM32F407VGT6           │◄═══════════════════════════►│    ESP32-S3-WROOM-1   │
-│  ARM Cortex-M4F @ 168 MHz   │    Bridge Protocol         │  (Cloud Connectivity)  │
-│  1MB Flash / 192KB SRAM      │                            │                        │
-│  -40°C to +105°C             │                            │  • WiFi 802.11n        │
-│                              │                            │  • BLE 5.0             │
-│  • I2C1 sensor bus           │                            │  • MQTT client         │
-│  • SPI1 LoRa radio           │                            │  • HTTP REST API       │
-│  • 3× 12-bit ADC             │                            │  • LoRa SX1276         │
-│  • Modbus RTU slave          │                            │  • OTA updates         │
-│  • Data pipeline + alerts    │                            │  • NTP time sync       │
-│  • IWDG watchdog (4s)        │                            │                        │
-│  • Hardware FPU              │                            │                        │
-└─────────┬────────────────────┘                            └────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                    STM32F407VGT6 (Single MCU)                       │
+│              ARM Cortex-M4F @ 168 MHz, -40/+105°C                   │
+│              1 MB Flash / 192 KB SRAM / Hardware FPU                │
+├─────────────────────────────────────────────────────────────────────┤
+│ SPI1 ─── SX1276 LoRa (PA4-PA7, PC4, PC5)                           │
+│ SPI2 ─── W5500 Ethernet (PB12-PB15, PD3, PD4) [optional]           │
+│ SPI3 ─── ATWINC1500 WiFi (PB3-PB5, PE3-PE6)                        │
+│ USART2 ── MAX3485 RS485 Modbus (PA2, PA3, PA1)                     │
+│ USART3 ── RN4870 BLE (PB10, PB11, PD8, PD9)                       │
+│ UART4 ── SIM7600E-H Cellular (PC10, PC11) [optional]               │
+│ USART1 ── Debug Console (PA9, PA10)                                 │
+│ I2C1 ─── Sensors: BME280, AS5600, SI1145, BH1750 (PB6, PB7)       │
+└─────────┬───────────────────────────────────────────────────────────┘
           │
           │ USART2 (RS485)
           │
@@ -54,8 +53,8 @@ Three operating modes selectable via DIP switch or software configuration:
 | **Hybrid** | 1:0 | Yes | Yes | Full capability |
 
 ### Cloud Mode
-- ESP32-S3 handles all connectivity (WiFi, MQTT, HTTP, BLE)
-- STM32F407 reads sensors and bridges data via USART3
+- ATWINC1500 handles WiFi, MQTT, HTTP connectivity
+- RN4870 provides BLE for mobile app configuration
 - LoRa available for long-range backup
 - Standard IoT deployment
 
@@ -68,8 +67,8 @@ Three operating modes selectable via DIP switch or software configuration:
 
 ### Hybrid Mode (Default)
 - Both cloud and SCADA active simultaneously
-- ESP32-S3 publishes to MQTT/HTTP
-- STM32F407 responds to Modbus master queries
+- ATWINC1500/W5500 publishes to MQTT/HTTP
+- Modbus RTU responds to SCADA master queries
 - Maximum observability and integration flexibility
 
 ## Modbus Register Map
@@ -148,8 +147,8 @@ Three operating modes selectable via DIP switch or software configuration:
 | PA1 | GPIO | MAX3485 DE/RE |
 | PA9 | USART1_TX | Debug header |
 | PA10 | USART1_RX | Debug header |
-| PB10 | USART3_TX | ESP32-S3 RX |
-| PB11 | USART3_RX | ESP32-S3 TX |
+| PB10 | USART3_TX | RN4870 RX |
+| PB11 | USART3_RX | RN4870 TX |
 | PA0 | ADC1_CH0 | Battery divider |
 | PC1 | ADC1_CH11 | PM2.5 sensor |
 | PB0 | TIM3_CH3 | Wind speed pulse |
@@ -179,29 +178,7 @@ Station A          Station B          SCADA Master
 - **Max devices**: 32 on single bus
 - **Shield**: Connect at one end only (SCADA master)
 
-## ESP32 ↔ STM32 Bridge Protocol
-
-The two MCUs communicate via USART3 at 921600 baud:
-
-```
-┌──────┬──────┬────────┬─────────┬───────┐
-│ SYNC │ LEN  │  CMD   │ PAYLOAD │  CRC  │
-│ 0xA5 │ u16  │  u8    │  var    │ u16   │
-└──────┴──────┴────────┴─────────┴───────┘
-```
-
-| Command | Code | Direction | Description |
-|---------|------|-----------|-------------|
-| SendReading | 0x01 | STM32→ESP32 | Weather data for MQTT |
-| SendAlert | 0x02 | STM32→ESP32 | Alert for MQTT |
-| SendStatus | 0x03 | STM32→ESP32 | Status update |
-| ConfigUpdate | 0x10 | ESP32→STM32 | Cloud config change |
-| OtaTrigger | 0x11 | ESP32→STM32 | OTA update signal |
-| TimeSync | 0x12 | ESP32→STM32 | NTP epoch sync |
-| Heartbeat | 0xFE | Both | Keepalive (5s interval) |
-| Ack | 0xFF | Both | Acknowledgment |
-
-## Hardware Components (STM32 Subsystem)
+## Hardware Components
 
 | # | Component | Part Number | Package | Temp Range |
 |---|-----------|-------------|---------|------------|
@@ -211,7 +188,8 @@ The two MCUs communicate via USART3 at 921600 baud:
 | 4 | RS485 TVS | SMBJ6.0CA | SMB | -40°C to +125°C |
 | 5 | RS485 Connector | Phoenix MC 1844210 | 4-pin plug | -40°C to +105°C |
 | 6 | Mode DIP Switch | C&K SDA02H1SBD | 2-pos SMD | -20°C to +70°C |
-| 7 | Bridge Header | 1x4 pin header | 2.54mm | — |
+| 7 | ATWINC1500 WiFi | ATWINC1500-MR210PB | QFN-28 | -40°C to +85°C |
+| 8 | RN4870 BLE | RN4870-I/RM | 11.5×8mm | -40°C to +85°C |
 
 ## Power Budget Addition
 
@@ -227,7 +205,7 @@ The two MCUs communicate via USART3 at 921600 baud:
 
 | File | Description |
 |------|-------------|
-| `stm32_scada.kicad_sch` | STM32F407 + MAX3485 + bridge schematic |
+| `stm32_scada.kicad_sch` | STM32F407 + MAX3485 schematic |
 | `BOM.csv` | Updated with 18 new components |
 
 ## SCADA Integration Examples
