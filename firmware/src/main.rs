@@ -188,6 +188,33 @@ fn main() -> ! {
     #[cfg(feature = "india")]
     let mut india_reading = industry::india::IndiaReading::default();
 
+    // ── Phase 5c: STM32 SCADA/Hybrid Mode ────────────────────────
+
+    #[cfg(feature = "stm32")]
+    let mut modbus_slave = {
+        use crate::comms::modbus_rtu::ModbusRtuSlave;
+        log::info!("STM32 SCADA module enabled (mode: {})", runtime_config.operating_mode.as_str());
+        let mut slave = ModbusRtuSlave::new(runtime_config.modbus_slave_addr);
+        if let Err(e) = slave.init() {
+            log::error!("Modbus RS485 init failed: {}", e);
+        }
+        slave
+    };
+
+    #[cfg(feature = "stm32")]
+    let mut mode_manager = {
+        use crate::core::mode_manager::ModeManager;
+        ModeManager::new(runtime_config.operating_mode)
+    };
+
+    #[cfg(feature = "stm32")]
+    log::info!(
+        "Operating mode: {} | Cloud: {} | SCADA: {}",
+        runtime_config.operating_mode.as_str(),
+        if runtime_config.operating_mode.cloud_enabled() { "ON" } else { "OFF" },
+        if runtime_config.operating_mode.scada_enabled() { "ON" } else { "OFF" },
+    );
+
     log::info!("Core systems initialized — entering main loop");
 
     // ── Phase 6: Main Loop ────────────────────────────────────────
@@ -402,6 +429,53 @@ fn main() -> ! {
                     // In real firmware: read PM2.5 sensor
                     // let pm25 = pm25_sensor.read()?;
                     log::debug!("Task: ReadIndia");
+                }
+
+                // ── STM32 SCADA Tasks ──────────────────────
+                #[cfg(feature = "stm32")]
+                TaskId::PollModbus => {
+                    if mode_manager.should_run_scada() {
+                        modbus_slave.poll(uptime_ms);
+                        // Transmit any pending response
+                        if let Some(_response) = modbus_slave.take_response() {
+                            // In real firmware: write response bytes to USART2
+                            // set DE/RE high, transmit, wait for completion, set DE/RE low
+                        }
+                    }
+                }
+
+                #[cfg(feature = "stm32")]
+                TaskId::UpdateScadaRegisters => {
+                    if mode_manager.should_run_scada() {
+                        modbus_slave.update_input_registers(
+                            latest_reading.temperature_c,
+                            latest_reading.humidity_pct,
+                            latest_reading.pressure_hpa,
+                            latest_reading.wind_speed_kmh,
+                            latest_reading.wind_dir_deg,
+                            latest_reading.rain_rate_mm_hr,
+                            latest_reading.rain_mm,
+                            latest_reading.uv_index,
+                            latest_reading.light_lux,
+                            latest_reading.heat_index_c,
+                            latest_reading.dew_point_c,
+                            latest_reading.wind_chill_c,
+                            0, // battery_mv — from power manager in real firmware
+                            0, // battery_pct
+                        );
+                        mode_manager.report_scada_health(true);
+                    }
+                    log::debug!("Task: UpdateScadaRegisters");
+                }
+
+                #[cfg(feature = "stm32")]
+                TaskId::BridgeSync => {
+                    if mode_manager.should_run_cloud() {
+                        // In real firmware: send latest reading via USART3 bridge
+                        // to ESP32-S3 for MQTT/HTTP publishing
+                        // bridge.send_reading(&latest_reading);
+                        log::debug!("Task: BridgeSync — sending to ESP32");
+                    }
                 }
 
                 #[cfg(feature = "india")]

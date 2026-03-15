@@ -49,6 +49,12 @@ pub enum Error {
 
     // Sensor lifecycle
     SensorNotReady,
+
+    // SCADA / Modbus errors
+    ModbusFrameError,
+    ModbusCrcError,
+    Rs485TxFailed,
+    BridgeTimeout,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,6 +110,10 @@ impl fmt::Display for Error {
             Error::InvalidConfig => write!(f, "invalid configuration"),
             Error::CrcMismatch => write!(f, "CRC mismatch"),
             Error::SensorNotReady => write!(f, "sensor not ready"),
+            Error::ModbusFrameError => write!(f, "Modbus frame error"),
+            Error::ModbusCrcError => write!(f, "Modbus CRC error"),
+            Error::Rs485TxFailed => write!(f, "RS485 transmit failed"),
+            Error::BridgeTimeout => write!(f, "ESP32 bridge timeout"),
         }
     }
 }

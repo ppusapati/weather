@@ -43,7 +43,9 @@ default = []
 agriculture = []
 solar = []
 india = []
+stm32 = []
 all-industries = ["agriculture", "solar", "india"]
+full-system = ["agriculture", "solar", "india", "stm32"]
 
 [profile.dev]
 opt-level = "s"

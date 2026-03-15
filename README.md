@@ -93,6 +93,16 @@ The firmware supports optional industry-specific extensions via Cargo features:
 | `solar` | Photovoltaic Monitoring | Pyranometer, panel temp (×2), power meter | Irradiance, yield estimation, peak sun hours, performance ratio, soiling loss, cloud transients |
 | `india` | Indian Regional | PM2.5 particulate sensor | Monsoon tracking, IMD heat wave alerts, cyclone detection, NAQI air quality, IST timezone, IN865 LoRa |
 | `all-industries` | All | All above | All above |
+| `stm32` | SCADA/Industrial | STM32F407 + MAX3485 RS485 | Modbus RTU slave, SCADA/Cloud/Hybrid modes |
+| `full-system` | Everything | All sensors + STM32 + RS485 | All analytics + SCADA + Cloud |
+
+### Operating Modes (with `stm32` feature)
+
+| Mode | Cloud (MQTT/HTTP) | SCADA (Modbus RS485) | Selection |
+|------|:-----------------:|:--------------------:|-----------|
+| **Cloud** | Yes | — | DIP 0:0 |
+| **SCADA** | Yes | Yes | DIP 0:1 |
+| **Hybrid** | Yes | Yes | DIP 1:0 (default) |
 
 ```bash
 # Build with agriculture module
@@ -106,11 +116,18 @@ cargo build --release --features india
 
 # Build with all industry modules
 cargo build --release --features all-industries
+
+# Build with SCADA support (STM32F407 + Modbus RS485)
+cargo build --release --features stm32
+
+# Full system: all industries + SCADA
+cargo build --release --features full-system
 ```
 
 See [docs/INDUSTRY_AGRICULTURE.md](docs/INDUSTRY_AGRICULTURE.md),
-[docs/INDUSTRY_SOLAR.md](docs/INDUSTRY_SOLAR.md), and
-[docs/INDUSTRY_INDIA.md](docs/INDUSTRY_INDIA.md) for detailed documentation.
+[docs/INDUSTRY_SOLAR.md](docs/INDUSTRY_SOLAR.md),
+[docs/INDUSTRY_INDIA.md](docs/INDUSTRY_INDIA.md), and
+[docs/STM32_SCADA.md](docs/STM32_SCADA.md) for detailed documentation.
 
 ## Building
 
@@ -166,7 +183,8 @@ weather/
 │       │   ├── soil_temp.rs      (agriculture/solar)
 │       │   ├── leaf_wetness.rs   (agriculture)
 │       │   ├── pyranometer.rs    (solar)
-│       │   └── pm25.rs           (india)
+│       │   ├── pm25.rs           (india)
+│       │   └── stm32f407.rs     (stm32 — MCU HAL + pin map)
 │       ├── comms/
 │       │   ├── mod.rs
 │       │   ├── wifi.rs
@@ -174,13 +192,15 @@ weather/
 │       │   ├── lora.rs
 │       │   ├── uart_console.rs
 │       │   ├── mqtt.rs
-│       │   └── http.rs
+│       │   ├── http.rs
+│       │   └── modbus_rtu.rs    (stm32 — Modbus RS485 slave)
 │       ├── core/
 │       │   ├── mod.rs
 │       │   ├── scheduler.rs
 │       │   ├── data_pipeline.rs
 │       │   ├── power.rs
-│       │   └── ota.rs
+│       │   ├── ota.rs
+│       │   └── mode_manager.rs  (stm32 — SCADA/Cloud/Hybrid)
 │       ├── industry/
 │       │   ├── mod.rs
 │       │   ├── agriculture.rs    (agriculture)

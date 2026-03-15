@@ -27,6 +27,10 @@ pub mod pyranometer;
 #[cfg(feature = "india")]
 pub mod pm25;
 
+// STM32F407 MCU support
+#[cfg(feature = "stm32")]
+pub mod stm32f407;
+
 use serde::{Deserialize, Serialize};
 
 /// Status of an individual sensor.

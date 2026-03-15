@@ -15,6 +15,10 @@ pub mod mqtt;
 pub mod uart_console;
 pub mod wifi;
 
+// Modbus RTU (SCADA) — requires STM32F407 with RS485 transceiver
+#[cfg(feature = "stm32")]
+pub mod modbus_rtu;
+
 use crate::core::data_pipeline::WeatherReading;
 use crate::error::Result;
 

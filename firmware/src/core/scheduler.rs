@@ -48,6 +48,15 @@ pub enum TaskId {
     /// Process India regional analytics (monsoon, heat wave, cyclone, AQI).
     #[cfg(feature = "india")]
     ProcessIndia,
+    /// Poll Modbus RTU slave (process pending frames).
+    #[cfg(feature = "stm32")]
+    PollModbus,
+    /// Update Modbus input registers with latest sensor data.
+    #[cfg(feature = "stm32")]
+    UpdateScadaRegisters,
+    /// Send bridge heartbeat / data to ESP32-S3.
+    #[cfg(feature = "stm32")]
+    BridgeSync,
 }
 
 /// A scheduled task.
@@ -66,8 +75,8 @@ pub struct ScheduledTask {
     pub last_duration_us: u32,
 }
 
-/// Maximum number of scheduled tasks (base 11 + industry tasks).
-const MAX_TASKS: usize = 17;
+/// Maximum number of scheduled tasks (base 11 + industry 6 + stm32 3).
+const MAX_TASKS: usize = 20;
 
 /// Task scheduler.
 pub struct Scheduler {
@@ -230,6 +239,35 @@ impl Scheduler {
                 id: TaskId::ProcessIndia,
                 interval_ms: config::INDIA_PROCESS_INTERVAL_MS,
                 next_run_ms: 4500,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+        }
+
+        // STM32 SCADA tasks
+        #[cfg(feature = "stm32")]
+        {
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::PollModbus,
+                interval_ms: 10, // Poll every 10ms for responsive SCADA
+                next_run_ms: 0,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::UpdateScadaRegisters,
+                interval_ms: config::SCADA_UPDATE_INTERVAL_MS,
+                next_run_ms: 1000,
+                enabled: true,
+                run_count: 0,
+                last_duration_us: 0,
+            });
+            let _ = tasks.push(ScheduledTask {
+                id: TaskId::BridgeSync,
+                interval_ms: config::BRIDGE_HEARTBEAT_MS,
+                next_run_ms: 5000,
                 enabled: true,
                 run_count: 0,
                 last_duration_us: 0,

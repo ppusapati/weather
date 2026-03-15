@@ -24,6 +24,10 @@
 /// | Voltage Regulator | TPS63020 | -40°C to +85°C | Wide input buck-boost |
 /// | TVS/ESD Protection | TPD4E05U06 | -40°C to +125°C | On all external lines |
 /// | Conformal Coating | Dow Corning 1-2577 | -65°C to +200°C | Moisture/salt spray |
+/// | STM32 MCU | STM32F407VGT6 | -40°C to +105°C | ARM Cortex-M4F, 168 MHz |
+/// | RS485 Transceiver | MAX3485ESA+ | -40°C to +85°C | Half-duplex, 10 Mbps |
+/// | RS485 TVS | SMBJ6.0CA | -40°C to +125°C | Bidirectional TVS on A/B |
+/// | RS485 Connector | Phoenix MC 4-pin | -40°C to +105°C | Pluggable terminal block |
 ///
 /// IP65/IP67-rated enclosure with UV-stabilized polycarbonate recommended.
 
@@ -406,6 +410,44 @@ pub const PM25_SAMPLE_DELAY_US: u32 = 280;
 #[cfg(feature = "india")]
 pub const PM25_SAMPLE_COUNT: u8 = 10;
 
+// ---------- STM32F407 + SCADA Configuration ----------
+
+/// STM32F407 system clock frequency (Hz).
+#[cfg(feature = "stm32")]
+pub const STM32_SYSCLK_HZ: u32 = 168_000_000;
+
+/// Modbus RS485 default baud rate.
+#[cfg(feature = "stm32")]
+pub const MODBUS_BAUD_RATE: u32 = 9600;
+
+/// Modbus RS485 default slave address (1–247).
+#[cfg(feature = "stm32")]
+pub const MODBUS_DEFAULT_ADDR: u8 = 1;
+
+/// Modbus inter-frame silence T3.5 (µs) at 9600 baud.
+#[cfg(feature = "stm32")]
+pub const MODBUS_T35_US: u32 = 4_063;
+
+/// ESP32 bridge UART baud rate.
+#[cfg(feature = "stm32")]
+pub const BRIDGE_BAUD_RATE: u32 = 921_600;
+
+/// SCADA register update interval (ms) — how often input registers are refreshed.
+#[cfg(feature = "stm32")]
+pub const SCADA_UPDATE_INTERVAL_MS: u64 = 1_000;
+
+/// IWDG watchdog timeout (ms).
+#[cfg(feature = "stm32")]
+pub const STM32_IWDG_TIMEOUT_MS: u32 = 4_000;
+
+/// Bridge heartbeat interval (ms).
+#[cfg(feature = "stm32")]
+pub const BRIDGE_HEARTBEAT_MS: u64 = 5_000;
+
+/// Bridge heartbeat timeout — ESP32 considered offline after this (ms).
+#[cfg(feature = "stm32")]
+pub const BRIDGE_TIMEOUT_MS: u64 = 15_000;
+
 // ---------- Firmware Info ----------
 
 pub const FIRMWARE_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -473,6 +515,14 @@ pub struct RuntimeConfig {
     pub india_gdd_base_temp_c: f32,
     #[cfg(feature = "india")]
     pub india_crop_type: heapless::String<16>,
+
+    // STM32 + SCADA config
+    #[cfg(feature = "stm32")]
+    pub operating_mode: crate::drivers::stm32f407::OperatingMode,
+    #[cfg(feature = "stm32")]
+    pub modbus_slave_addr: u8,
+    #[cfg(feature = "stm32")]
+    pub modbus_baud_rate: u32,
 }
 
 impl RuntimeConfig {
@@ -527,6 +577,18 @@ impl RuntimeConfig {
                 self.india_gdd_base_temp_c = GDD_BASE_TEMP_RICE_INDIA;
             }
         }
+        #[cfg(feature = "stm32")]
+        {
+            if self.modbus_slave_addr == 0 || self.modbus_slave_addr > 247 {
+                log::warn!("Config: invalid Modbus addr {}, resetting to {}", self.modbus_slave_addr, MODBUS_DEFAULT_ADDR);
+                self.modbus_slave_addr = MODBUS_DEFAULT_ADDR;
+            }
+            let valid_bauds = [2400, 4800, 9600, 19200, 38400];
+            if !valid_bauds.contains(&self.modbus_baud_rate) {
+                log::warn!("Config: invalid Modbus baud {}, resetting to {}", self.modbus_baud_rate, MODBUS_BAUD_RATE);
+                self.modbus_baud_rate = MODBUS_BAUD_RATE;
+            }
+        }
     }
 }
 
@@ -575,6 +637,12 @@ impl Default for RuntimeConfig {
             india_gdd_base_temp_c: GDD_BASE_TEMP_RICE_INDIA,
             #[cfg(feature = "india")]
             india_crop_type: heapless::String::new(),
+            #[cfg(feature = "stm32")]
+            operating_mode: crate::drivers::stm32f407::OperatingMode::Hybrid,
+            #[cfg(feature = "stm32")]
+            modbus_slave_addr: MODBUS_DEFAULT_ADDR,
+            #[cfg(feature = "stm32")]
+            modbus_baud_rate: MODBUS_BAUD_RATE,
         }
     }
 }
