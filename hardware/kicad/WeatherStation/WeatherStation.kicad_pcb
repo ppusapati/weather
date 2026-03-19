@@ -7,13 +7,13 @@
 
   (paper "A4")
   (title_block
-    (title "ESP32-S3 Weather Station PCB")
-    (date "2026-02-28")
-    (rev "1.0")
-    (company "Weather Station Project")
+    (title "STM32F407 Weather Station PCB")
+    (date "2026-03-19")
+    (rev "2.0")
+    (company "P9E Microsystems Pvt Ltd")
     (comment 1 "4-layer PCB, 1.6mm, ENIG finish")
     (comment 2 "Industrial outdoor weather monitoring")
-    (comment 3 "ESP32-S3-WROOM-1-N16R8I")
+    (comment 3 "STM32F407VGT6 Single-MCU")
     (comment 4 "FR4 Tg170, IPC Class 2")
   )
 
@@ -268,20 +268,32 @@
   ;; SILKSCREEN LABELS
   ;; =====================================================================
 
-  (gr_text "Weather Station v1.0" (at 50 40) (layer "F.SilkS")
-    (effects (font (size 1.5 1.5) (thickness 0.2) (bold yes)) (justify center))
+  (gr_text "P9E" (at 50 36) (layer "F.SilkS")
+    (effects (font (size 2.5 2.5) (thickness 0.3) (bold yes)) (justify center))
   )
 
-  (gr_text "ESP32-S3-WROOM-1-N16R8I" (at 50 43) (layer "F.SilkS")
+  (gr_text "P9E Microsystems Pvt Ltd" (at 50 39.5) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)) (justify center))
   )
 
-  (gr_text "Industrial Grade -40C to +85C" (at 50 45.5) (layer "F.SilkS")
+  (gr_text "www.p9e.in" (at 50 42) (layer "F.SilkS")
     (effects (font (size 0.8 0.8) (thickness 0.12)) (justify center))
   )
 
-  ;; Back silkscreen: pin labels and regulatory marks
-  (gr_text "Weather Station PCB Rev 1.0\nDesigned for outdoor deployment\nApply conformal coating before use\nRoHS Compliant" (at 50 40) (layer "B.SilkS")
+  (gr_text "Weather Station v2.0" (at 50 45) (layer "F.SilkS")
+    (effects (font (size 1.5 1.5) (thickness 0.2) (bold yes)) (justify center))
+  )
+
+  (gr_text "STM32F407VGT6" (at 50 48) (layer "F.SilkS")
+    (effects (font (size 1 1) (thickness 0.15)) (justify center))
+  )
+
+  (gr_text "Industrial Grade -40C to +105C" (at 50 50.5) (layer "F.SilkS")
+    (effects (font (size 0.8 0.8) (thickness 0.12)) (justify center))
+  )
+
+  ;; Back silkscreen: manufacturer info and regulatory marks
+  (gr_text "P9E Microsystems Pvt Ltd\nwww.p9e.in\nWeather Station PCB Rev 2.0\nDesigned for outdoor deployment\nApply conformal coating before use\nRoHS Compliant" (at 50 40) (layer "B.SilkS")
     (effects (font (size 1 1) (thickness 0.15)) (justify center mirror))
   )
 
