@@ -20,46 +20,40 @@
       (property "Datasheet" "https://www.st.com/resource/en/datasheet/stm32f407vg.pdf" (at 0 0 0) (effects (font (size 1.27 1.27)) hide))
       (symbol "STM32F407VGT6_1_1"
         (rectangle (start -25.4 48.26) (end 25.4 -48.26) (stroke (width 0.254) (type default)) (fill (type background)))
-        ;; Power pins
         (pin power_in line (at -27.94 45.72 0) (length 2.54) (name "VDD" (effects (font (size 1.0 1.0)))) (number "11" (effects (font (size 1.0 1.0)))))
         (pin power_in line (at -27.94 43.18 0) (length 2.54) (name "VDDA" (effects (font (size 1.0 1.0)))) (number "22" (effects (font (size 1.0 1.0)))))
         (pin power_in line (at -27.94 -45.72 0) (length 2.54) (name "VSS" (effects (font (size 1.0 1.0)))) (number "12" (effects (font (size 1.0 1.0)))))
-        ;; I2C1
         (pin bidirectional line (at 27.94 45.72 180) (length 2.54) (name "PB6/I2C1_SCL" (effects (font (size 1.0 1.0)))) (number "58" (effects (font (size 1.0 1.0)))))
         (pin bidirectional line (at 27.94 43.18 180) (length 2.54) (name "PB7/I2C1_SDA" (effects (font (size 1.0 1.0)))) (number "59" (effects (font (size 1.0 1.0)))))
-        ;; SPI1 (LoRa)
         (pin output line (at 27.94 38.1 180) (length 2.54) (name "PA5/SPI1_SCK" (effects (font (size 1.0 1.0)))) (number "25" (effects (font (size 1.0 1.0)))))
         (pin input line (at 27.94 35.56 180) (length 2.54) (name "PA6/SPI1_MISO" (effects (font (size 1.0 1.0)))) (number "26" (effects (font (size 1.0 1.0)))))
         (pin output line (at 27.94 33.02 180) (length 2.54) (name "PA7/SPI1_MOSI" (effects (font (size 1.0 1.0)))) (number "27" (effects (font (size 1.0 1.0)))))
         (pin output line (at 27.94 30.48 180) (length 2.54) (name "PA4/SPI1_NSS" (effects (font (size 1.0 1.0)))) (number "24" (effects (font (size 1.0 1.0)))))
-        ;; USART2 (RS485)
         (pin output line (at 27.94 22.86 180) (length 2.54) (name "PA2/USART2_TX" (effects (font (size 1.0 1.0)))) (number "16" (effects (font (size 1.0 1.0)))))
         (pin input line (at 27.94 20.32 180) (length 2.54) (name "PA3/USART2_RX" (effects (font (size 1.0 1.0)))) (number "17" (effects (font (size 1.0 1.0)))))
         (pin output line (at 27.94 17.78 180) (length 2.54) (name "PA1/RS485_DE" (effects (font (size 1.0 1.0)))) (number "15" (effects (font (size 1.0 1.0)))))
-        ;; USART1 (Debug)
         (pin output line (at 27.94 10.16 180) (length 2.54) (name "PA9/USART1_TX" (effects (font (size 1.0 1.0)))) (number "68" (effects (font (size 1.0 1.0)))))
         (pin input line (at 27.94 7.62 180) (length 2.54) (name "PA10/USART1_RX" (effects (font (size 1.0 1.0)))) (number "69" (effects (font (size 1.0 1.0)))))
-        ;; USART3 (ESP32 Bridge)
         (pin output line (at 27.94 0 180) (length 2.54) (name "PB10/USART3_TX" (effects (font (size 1.0 1.0)))) (number "47" (effects (font (size 1.0 1.0)))))
         (pin input line (at 27.94 -2.54 180) (length 2.54) (name "PB11/USART3_RX" (effects (font (size 1.0 1.0)))) (number "48" (effects (font (size 1.0 1.0)))))
-        ;; ADC
         (pin input line (at -27.94 30.48 0) (length 2.54) (name "PA0/ADC1_CH0" (effects (font (size 1.0 1.0)))) (number "14" (effects (font (size 1.0 1.0)))))
         (pin input line (at -27.94 27.94 0) (length 2.54) (name "PC0/ADC1_CH10" (effects (font (size 1.0 1.0)))) (number "8" (effects (font (size 1.0 1.0)))))
         (pin input line (at -27.94 25.4 0) (length 2.54) (name "PC1/ADC1_CH11" (effects (font (size 1.0 1.0)))) (number "9" (effects (font (size 1.0 1.0)))))
-        ;; GPIO
         (pin bidirectional line (at -27.94 15.24 0) (length 2.54) (name "PB0/TIM3_CH3" (effects (font (size 1.0 1.0)))) (number "28" (effects (font (size 1.0 1.0)))))
         (pin bidirectional line (at -27.94 12.7 0) (length 2.54) (name "PB1/TIM3_CH4" (effects (font (size 1.0 1.0)))) (number "29" (effects (font (size 1.0 1.0)))))
-        ;; Mode DIP switch
         (pin input line (at -27.94 5.08 0) (length 2.54) (name "PE0/MODE_0" (effects (font (size 1.0 1.0)))) (number "97" (effects (font (size 1.0 1.0)))))
         (pin input line (at -27.94 2.54 0) (length 2.54) (name "PE1/MODE_1" (effects (font (size 1.0 1.0)))) (number "98" (effects (font (size 1.0 1.0)))))
-        ;; LEDs
         (pin output line (at -27.94 -5.08 0) (length 2.54) (name "PD0/LED_STATUS" (effects (font (size 1.0 1.0)))) (number "81" (effects (font (size 1.0 1.0)))))
         (pin output line (at -27.94 -7.62 0) (length 2.54) (name "PD1/LED_ERROR" (effects (font (size 1.0 1.0)))) (number "82" (effects (font (size 1.0 1.0)))))
         (pin output line (at -27.94 -10.16 0) (length 2.54) (name "PD2/LED_SCADA" (effects (font (size 1.0 1.0)))) (number "83" (effects (font (size 1.0 1.0)))))
-        ;; Reset / Boot
         (pin input line (at -27.94 -20.32 0) (length 2.54) (name "NRST" (effects (font (size 1.0 1.0)))) (number "7" (effects (font (size 1.0 1.0)))))
         (pin input line (at -27.94 -22.86 0) (length 2.54) (name "BOOT0" (effects (font (size 1.0 1.0)))) (number "94" (effects (font (size 1.0 1.0)))))
-        ;; HSE crystal
+        (pin output line (at 27.94 -7.62 180) (length 2.54) (name "PB13/SPI2_SCK" (effects (font (size 1.0 1.0)))) (number "52" (effects (font (size 1.0 1.0)))))
+        (pin input line (at 27.94 -10.16 180) (length 2.54) (name "PB14/SPI2_MISO" (effects (font (size 1.0 1.0)))) (number "53" (effects (font (size 1.0 1.0)))))
+        (pin output line (at 27.94 -12.7 180) (length 2.54) (name "PB15/SPI2_MOSI" (effects (font (size 1.0 1.0)))) (number "54" (effects (font (size 1.0 1.0)))))
+        (pin output line (at 27.94 -15.24 180) (length 2.54) (name "PB12/SPI2_NSS" (effects (font (size 1.0 1.0)))) (number "51" (effects (font (size 1.0 1.0)))))
+        (pin output line (at 27.94 -20.32 180) (length 2.54) (name "PD10/SD_CS" (effects (font (size 1.0 1.0)))) (number "79" (effects (font (size 1.0 1.0)))))
+        (pin input line (at 27.94 -22.86 180) (length 2.54) (name "PD11/SD_DET" (effects (font (size 1.0 1.0)))) (number "80" (effects (font (size 1.0 1.0)))))
         (pin input line (at -27.94 -30.48 0) (length 2.54) (name "PH0/OSC_IN" (effects (font (size 1.0 1.0)))) (number "5" (effects (font (size 1.0 1.0)))))
         (pin output line (at -27.94 -33.02 0) (length 2.54) (name "PH1/OSC_OUT" (effects (font (size 1.0 1.0)))) (number "6" (effects (font (size 1.0 1.0)))))
       )
@@ -191,16 +185,10 @@
       )
     )
   )
-
-  ;; =====================================================================
-  ;; STM32F407VGT6 — Main MCU (Industrial -40C to +105C)
-  ;; =====================================================================
-
   (text "╔══════════════════════════════════════════════════════════╗\n║   STM32F407VGT6 — Industrial Sensor + SCADA Controller   ║\n║   ARM Cortex-M4F @ 168 MHz | 1MB Flash | 192KB SRAM      ║\n║   Temp: -40°C to +105°C (Industrial) | LQFP-100          ║\n╚══════════════════════════════════════════════════════════╝"
     (at 76.2 25.4 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
 
-  ;; U10 — STM32F407VGT6
   (symbol (lib_id "MCU_ST:STM32F407VGT6") (at 127 101.6 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000001-0001-0000-0000-000000000001")
@@ -208,7 +196,6 @@
     (property "Value" "STM32F407VGT6" (at 127 152.4 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Y1 — 8 MHz HSE Crystal
   (symbol (lib_id "Device:Crystal") (at 76.2 132.08 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000001-0002-0000-0000-000000000001")
@@ -216,7 +203,6 @@
     (property "Value" "8MHz" (at 76.2 137.16 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Crystal load caps (2× 20pF)
   (symbol (lib_id "Device:C") (at 68.58 139.7 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000001-0003-0000-0000-000000000001")
@@ -230,7 +216,6 @@
     (property "Value" "20pF" (at 86.36 142.24 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; MCU decoupling caps (4× 100nF + 1× 4.7µF bulk)
   (symbol (lib_id "Device:C") (at 167.64 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000001-0005-0000-0000-000000000001")
@@ -244,7 +229,6 @@
     (property "Value" "4.7µF" (at 182.88 58.42 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; NRST pull-up + filter cap
   (symbol (lib_id "Device:R") (at 83.82 78.74 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000001-0007-0000-0000-000000000001")
@@ -258,23 +242,16 @@
     (property "Value" "100nF" (at 86.36 91.44 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; BOOT0 pull-down (normal boot from flash)
   (symbol (lib_id "Device:R") (at 83.82 96.52 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000001-0009-0000-0000-000000000001")
     (property "Reference" "R21" (at 86.36 96.52 0) (effects (font (size 1.0 1.0)) (justify left)))
     (property "Value" "10k" (at 86.36 99.06 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
-
-  ;; =====================================================================
-  ;; RS485 TRANSCEIVER — MAX3485ESA+ (Industrial -40C to +85C)
-  ;; =====================================================================
-
   (text "╔══════════════════════════════════════════╗\n║   RS485 Modbus RTU Interface             ║\n║   MAX3485ESA+ half-duplex transceiver    ║\n║   120Ω termination + TVS protection      ║\n╚══════════════════════════════════════════╝"
     (at 220 25.4 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
 
-  ;; U11 — MAX3485ESA+ RS485 Transceiver
   (symbol (lib_id "Interface_UART:MAX3485") (at 243.84 71.12 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000002-0001-0000-0000-000000000001")
@@ -282,7 +259,6 @@
     (property "Value" "MAX3485ESA+" (at 243.84 83.82 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; RS485 bus termination resistor (120Ω at end of bus)
   (symbol (lib_id "Device:R") (at 271.78 71.12 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000002-0002-0000-0000-000000000001")
@@ -290,7 +266,6 @@
     (property "Value" "120Ω" (at 271.78 76.2 0) (effects (font (size 1.0 1.0))))
   )
 
-  ;; TVS diode on RS485 A/B lines
   (symbol (lib_id "Device:D_TVS") (at 264.16 83.82 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000002-0003-0000-0000-000000000001")
@@ -298,7 +273,6 @@
     (property "Value" "SMBJ6.0CA" (at 274.32 83.82 0) (effects (font (size 1.0 1.0))))
   )
 
-  ;; VCC decoupling for MAX3485
   (symbol (lib_id "Device:C") (at 256.54 60.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000002-0004-0000-0000-000000000001")
@@ -306,23 +280,16 @@
     (property "Value" "100nF" (at 259.08 63.5 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; J16 — RS485 Bus Connector (A, B, GND, Shield)
   (symbol (lib_id "Connector:Conn_01x04") (at 299.72 71.12 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000002-0005-0000-0000-000000000001")
     (property "Reference" "J16" (at 299.72 60.96 0) (effects (font (size 1.27 1.27))))
     (property "Value" "RS485 Bus (Phoenix MC)" (at 314.96 60.96 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
-
-  ;; =====================================================================
-  ;; ESP32-S3 BRIDGE — USART3 interconnect
-  ;; =====================================================================
-
   (text "╔══════════════════════════════════════════╗\n║   ESP32-S3 Bridge (Cloud Connectivity)   ║\n║   USART3 @ 921600 baud, 3.3V levels     ║\n║   Framed protocol with CRC16            ║\n╚══════════════════════════════════════════╝"
     (at 220 115 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
 
-  ;; J17 — ESP32-S3 Bridge Header (TX, RX, 3V3, GND)
   (symbol (lib_id "Connector:Conn_01x04") (at 269.24 139.7 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000003-0001-0000-0000-000000000001")
@@ -330,7 +297,6 @@
     (property "Value" "ESP32-S3 Bridge (Header)" (at 289.56 129.54 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; Series resistors for bridge UART (100Ω protection)
   (symbol (lib_id "Device:R") (at 243.84 134.62 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000003-0002-0000-0000-000000000001")
@@ -343,16 +309,10 @@
     (property "Reference" "R24" (at 243.84 147.32 0) (effects (font (size 1.0 1.0))))
     (property "Value" "100Ω" (at 243.84 152.4 0) (effects (font (size 1.0 1.0))))
   )
-
-  ;; =====================================================================
-  ;; MODE SELECT DIP SWITCH
-  ;; =====================================================================
-
   (text "╔════════════════════════════════════╗\n║   Mode Select DIP Switch           ║\n║   SW1=0,SW2=0: Cloud               ║\n║   SW1=1,SW2=0: SCADA               ║\n║   SW1=0,SW2=1: Hybrid              ║\n║   SW1=1,SW2=1: Hybrid (reserved)   ║\n╚════════════════════════════════════╝"
     (at 55.88 165.1 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
 
-  ;; SW3 — Mode DIP Switch (2-position)
   (symbol (lib_id "Switch:SW_DIP_x02") (at 76.2 187.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000004-0001-0000-0000-000000000001")
@@ -360,7 +320,6 @@
     (property "Value" "MODE_SELECT" (at 76.2 195.58 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Pull-down resistors for DIP switch
   (symbol (lib_id "Device:R") (at 60.96 193.04 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "50000004-0002-0000-0000-000000000001")
@@ -373,27 +332,12 @@
     (property "Reference" "R26" (at 53.34 193.04 0) (effects (font (size 1.0 1.0)) (justify right)))
     (property "Value" "10k" (at 53.34 195.58 0) (effects (font (size 1.0 1.0)) (justify right)))
   )
-
-  ;; =====================================================================
-  ;; STATUS LEDs (3× for Mode indication)
-  ;; =====================================================================
-
   (text "LEDs:\n  PD0 = Green (Status/Heartbeat)\n  PD1 = Red (Error/Fault)\n  PD2 = Amber (SCADA Active)"
     (at 55.88 215 0) (effects (font (size 1.0 1.0)) (justify left))
   )
-
-  ;; =====================================================================
-  ;; Important Design Notes
-  ;; =====================================================================
-
   (text "DESIGN NOTES:\n\n1. STM32F407VGT6 handles ALL sensor acquisition and local processing\n2. ESP32-S3 handles cloud connectivity ONLY (WiFi, BLE, MQTT, HTTP)\n3. STM32 sends processed readings to ESP32 via USART3 bridge\n4. RS485 Modbus runs on STM32 USART2 via MAX3485 transceiver\n5. Both MCUs share 3.3V power rail from TPS63020\n6. IWDG on STM32 provides 4-second watchdog protection\n7. DIP switch on PE0/PE1 selects operating mode at boot\n8. All external I/O protected with TVS diodes\n\nRS485 BUS WIRING:\n  - Use twisted pair cable (Cat5e or dedicated RS485 cable)\n  - 120Ω termination at each end of bus\n  - Maximum bus length: 1200m at 9600 baud\n  - Maximum 32 devices on bus\n  - Shield connected to GND at one end only\n\nJ16 PINOUT (Phoenix Contact MC series):\n  Pin 1 = A (non-inverting, D+)\n  Pin 2 = B (inverting, D-)\n  Pin 3 = GND (signal ground)\n  Pin 4 = Shield (chassis ground)"
     (at 55.88 240 0) (effects (font (size 1.0 1.0)) (justify left))
   )
-
-  ;; =====================================================================
-  ;; Hierarchical Labels
-  ;; =====================================================================
-
   (hierarchical_label "I2C1_SCL" (shape bidirectional) (at 167.64 45.72 0) (effects (font (size 1.27 1.27)) (justify left))
     (uuid "50000005-0001-0000-0000-000000000001")
   )
@@ -409,6 +353,25 @@
   (hierarchical_label "SPI1_MOSI" (shape output) (at 167.64 33.02 0) (effects (font (size 1.27 1.27)) (justify left))
     (uuid "50000005-0005-0000-0000-000000000001")
   )
+  (hierarchical_label "SPI2_SCK" (shape output) (at 167.64 -7.62 0) (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "50000005-0020-0000-0000-000000000001")
+  )
+  (hierarchical_label "SPI2_MISO" (shape input) (at 167.64 -10.16 0) (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "50000005-0021-0000-0000-000000000001")
+  )
+  (hierarchical_label "SPI2_MOSI" (shape output) (at 167.64 -12.7 0) (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "50000005-0022-0000-0000-000000000001")
+  )
+  (hierarchical_label "SPI2_NSS" (shape output) (at 167.64 -15.24 0) (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "50000005-0023-0000-0000-000000000001")
+  )
+  (hierarchical_label "SD_CS" (shape output) (at 167.64 -20.32 0) (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "50000005-0024-0000-0000-000000000001")
+  )
+  (hierarchical_label "SD_DET" (shape input) (at 167.64 -22.86 0) (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "50000005-0025-0000-0000-000000000001")
+  )
+
   (hierarchical_label "RS485_A" (shape bidirectional) (at 309.88 67.31 0) (effects (font (size 1.27 1.27)) (justify left))
     (uuid "50000005-0006-0000-0000-000000000001")
   )

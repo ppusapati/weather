@@ -76,7 +76,6 @@
       )
     )
 
-    ;; Reuse basic symbols from parent
     (symbol "Device:C" (pin_numbers hide) (in_bom yes) (on_board yes)
       (property "Reference" "C" (at 0.635 2.54 0) (effects (font (size 1.27 1.27)) (justify left)))
       (property "Value" "C" (at 0.635 -2.54 0) (effects (font (size 1.27 1.27)) (justify left)))
@@ -192,12 +191,6 @@
       )
     )
   )
-
-  ;; =====================================================================
-  ;; Component Instances
-  ;; =====================================================================
-
-  ;; USB-C Connector (J1)
   (symbol (lib_id "Connector:USB_C_Receptacle_USB2.0") (at 35.56 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000001-0001-0000-0000-000000000001")
@@ -205,7 +198,6 @@
     (property "Value" "USB-C (GCT USB4105)" (at 35.56 45.72 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; CC1 pulldown 5.1k
   (symbol (lib_id "Device:R") (at 55.88 60.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000001-0002-0000-0000-000000000001")
@@ -213,7 +205,6 @@
     (property "Value" "5.1k" (at 58.42 63.5 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; CC2 pulldown 5.1k
   (symbol (lib_id "Device:R") (at 63.5 60.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000001-0002-0000-0000-000000000002")
@@ -221,7 +212,6 @@
     (property "Value" "5.1k" (at 66.04 63.5 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; Polyfuse F1
   (symbol (lib_id "Device:Polyfuse") (at 55.88 46.99 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000001-0003-0000-0000-000000000001")
@@ -229,7 +219,6 @@
     (property "Value" "500mA PTC" (at 55.88 49.53 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Solar panel connector (J2)
   (symbol (lib_id "Connector:Conn_01x02") (at 35.56 86.36 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000002-0001-0000-0000-000000000001")
@@ -237,7 +226,6 @@
     (property "Value" "Solar 6V (JST-PH)" (at 35.56 83.82 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Schottky diode D1 (solar reverse protection)
   (symbol (lib_id "Device:D_Schottky") (at 50.8 86.36 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000002-0002-0000-0000-000000000001")
@@ -245,7 +233,6 @@
     (property "Value" "SS14" (at 50.8 88.9 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; TP4056 Battery Charger (U2)
   (symbol (lib_id "WeatherStation:TP4056") (at 100.33 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000003-0001-0000-0000-000000000001")
@@ -253,7 +240,6 @@
     (property "Value" "TP4056" (at 100.33 45.72 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; RPROG resistor (2.2k = 500mA charge)
   (symbol (lib_id "Device:R") (at 86.36 66.04 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000003-0002-0000-0000-000000000001")
@@ -261,7 +247,6 @@
     (property "Value" "2.2k" (at 88.9 68.58 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; DW01A Battery Protection (U2A)
   (symbol (lib_id "WeatherStation:DW01A") (at 100.33 86.36 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000003-0003-0000-0000-000000000001")
@@ -269,7 +254,6 @@
     (property "Value" "DW01A" (at 100.33 78.74 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Battery connector (J3)
   (symbol (lib_id "Connector:Conn_01x02") (at 134.62 63.5 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000004-0001-0000-0000-000000000001")
@@ -277,7 +261,6 @@
     (property "Value" "18650 LiPo (JST-PH)" (at 134.62 58.42 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Charging LED (D3 - Red)
   (symbol (lib_id "Device:LED") (at 121.92 50.8 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000005-0001-0000-0000-000000000001")
@@ -285,7 +268,6 @@
     (property "Value" "Red (CHG)" (at 121.92 53.34 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Standby LED (D4 - Green)
   (symbol (lib_id "Device:LED") (at 121.92 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000005-0001-0000-0000-000000000002")
@@ -293,7 +275,6 @@
     (property "Value" "Green (STBY)" (at 127 60.96 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; AMS1117-3.3 LDO (U3)
   (symbol (lib_id "WeatherStation:AMS1117-3.3") (at 180.34 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000006-0001-0000-0000-000000000001")
@@ -301,7 +282,6 @@
     (property "Value" "AMS1117-3.3" (at 180.34 50.8 0) (effects (font (size 1.27 1.27))))
   )
 
-  ;; Input cap (10uF)
   (symbol (lib_id "Device:C") (at 167.64 63.5 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000006-0002-0000-0000-000000000001")
@@ -309,7 +289,6 @@
     (property "Value" "10uF" (at 170.18 66.04 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; Output caps (22uF + 100nF)
   (symbol (lib_id "Device:C") (at 195.58 63.5 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000006-0003-0000-0000-000000000001")
@@ -324,7 +303,6 @@
     (property "Value" "100nF" (at 205.74 66.04 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; Battery voltage divider (100k/100k)
   (symbol (lib_id "Device:R") (at 152.4 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000007-0001-0000-0000-000000000001")
@@ -339,7 +317,6 @@
     (property "Value" "100k" (at 154.94 71.12 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; Filter cap on BATT_SENSE
   (symbol (lib_id "Device:C") (at 157.48 68.58 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000007-0002-0000-0000-000000000001")
@@ -347,18 +324,12 @@
     (property "Value" "100nF" (at 160.02 71.12 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; Power indicator LED (D5)
   (symbol (lib_id "Device:LED") (at 210.82 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "20000008-0001-0000-0000-000000000001")
     (property "Reference" "D5" (at 210.82 53.34 0) (effects (font (size 1.27 1.27))))
     (property "Value" "Blue (PWR)" (at 210.82 58.42 0) (effects (font (size 1.27 1.27))))
   )
-
-  ;; =====================================================================
-  ;; Hierarchical Labels (interface to parent sheet)
-  ;; =====================================================================
-
   (hierarchical_label "+5V" (shape output) (at 76.2 46.99 0) (effects (font (size 1.27 1.27)) (justify left))
     (uuid "20000009-0001-0000-0000-000000000001")
   )
@@ -374,11 +345,6 @@
   (hierarchical_label "GND" (shape input) (at 100.33 96.52 270) (effects (font (size 1.27 1.27)) (justify left))
     (uuid "20000009-0005-0000-0000-000000000001")
   )
-
-  ;; =====================================================================
-  ;; Text Annotations
-  ;; =====================================================================
-
   (text "POWER SUPPLY DESIGN NOTES:\n\n1. USB-C: 5V input with 500mA polyfuse protection\n   CC1/CC2 5.1k pulldowns = UFP/sink role\n2. Solar: 6V panel via Schottky diode (SS14, Vf=0.45V)\n   Connects to TP4056 VCC along with USB\n3. TP4056: RPROG=2.2k sets 500mA max charge current\n   Includes DW01A + FS8205A protection against\n   overcharge (4.3V), overdischarge (2.4V), overcurrent (3A)\n4. AMS1117-3.3: LDO from VBAT (~3.0-4.2V) to 3.3V\n   Dropout: 1.1V typ @ 1A, sufficient above 3.3+1.1=4.4V...\n   NOTE: At low VBAT the output will droop. Consider\n   TLV1117-3.3 (600mV dropout) for better low-battery operation.\n5. Battery monitor: 100k/100k divider = 0.5x ratio\n   At VBAT=4.2V: ADC sees 2.1V (within 3.3V range)\n   At VBAT=3.0V: ADC sees 1.5V\n6. All ceramic caps — 10uF and 22uF must be X5R/X7R, 10V+\n\nPOWER BUDGET:\n  ESP32-S3 active (WiFi): ~180mA\n  Sensors (all active):    ~30mA\n  LoRa TX (+14dBm):       ~120mA (burst)\n  Total average:          ~200mA\n  With 3000mAh 18650: ~15 hours"
     (at 35.56 107.95 0) (effects (font (size 1.0 1.0)) (justify left))
   )

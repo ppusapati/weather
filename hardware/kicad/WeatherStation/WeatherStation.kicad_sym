@@ -1,11 +1,4 @@
 (kicad_symbol_lib (version 20220914) (generator kicad_symbol_editor)
-
-  ;; =====================================================================
-  ;; Custom symbol library for Weather Station project
-  ;; Contains symbols not in standard KiCad libraries
-  ;; =====================================================================
-
-  ;; ATWINC1500 WiFi module (SPI interface)
   (symbol "ATWINC1500" (in_bom yes) (on_board yes)
     (property "Reference" "U" (at 0 16.51 0) (effects (font (size 1.27 1.27))))
     (property "Value" "ATWINC1500-MR210PB" (at 0 15.24 0) (effects (font (size 1.27 1.27))))
@@ -29,7 +22,6 @@
     )
   )
 
-  ;; RN4870 BLE module (UART interface)
   (symbol "RN4870" (in_bom yes) (on_board yes)
     (property "Reference" "U" (at 0 12.7 0) (effects (font (size 1.27 1.27))))
     (property "Value" "RN4870-I/RM" (at 0 11.43 0) (effects (font (size 1.27 1.27))))
@@ -125,6 +117,27 @@
       (pin power_in line (at -7.62 0 0) (length 2.54) (name "VIN" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
       (pin power_in line (at 0 -5.08 90) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
       (pin power_out line (at 7.62 0 180) (length 2.54) (name "VOUT" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+    )
+  )
+
+  (symbol "MicroSD_SPI" (in_bom yes) (on_board yes)
+    (property "Reference" "J" (at 0 13.97 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "MicroSD_SPI" (at 0 12.7 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Connector:MicroSD_Molex_5031821852" (at 0 -13.97 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "https://www.molex.com/en-us/products/part-detail/5031821852" (at 0 -16.51 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Micro-SD Card Holder, Push-Push, SPI Mode, -25/+85C" (at 0 -19.05 0) (effects (font (size 1.27 1.27)) hide))
+    (symbol "MicroSD_SPI_0_1"
+      (rectangle (start -10.16 11.43) (end 10.16 -11.43) (stroke (width 0.254) (type default)) (fill (type background)))
+    )
+    (symbol "MicroSD_SPI_1_1"
+      (pin input line (at -12.7 8.89 0) (length 2.54) (name "CS" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+      (pin input line (at -12.7 6.35 0) (length 2.54) (name "DI" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+      (pin power_in line (at -12.7 3.81 0) (length 2.54) (name "VSS1" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+      (pin power_in line (at -12.7 1.27 0) (length 2.54) (name "VCC" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))
+      (pin input line (at -12.7 -1.27 0) (length 2.54) (name "CLK" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27)))))
+      (pin power_in line (at -12.7 -3.81 0) (length 2.54) (name "VSS2" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27)))))
+      (pin output line (at -12.7 -6.35 0) (length 2.54) (name "DO" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27)))))
+      (pin output line (at 12.7 8.89 180) (length 2.54) (name "CD" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27)))))
     )
   )
 

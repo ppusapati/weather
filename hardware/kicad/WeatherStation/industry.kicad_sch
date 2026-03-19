@@ -96,17 +96,10 @@
       )
     )
   )
-
-  ;; =====================================================================
-  ;; AGRICULTURE MODULE — Dashed box left half
-  ;; =====================================================================
-
-  ;; Agriculture box outline (User.Drawings layer annotation)
   (text "╔══════════════════════════════════════════╗\n║       AGRICULTURE MODULE (feature flag)       ║\n║    Cargo.toml: features = [\"agriculture\"]      ║\n╚══════════════════════════════════════════╝"
     (at 55.88 30.48 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
 
-  ;; J8 — Soil Moisture Sensor (Shallow)
   (symbol (lib_id "Connector:Conn_01x03") (at 50.8 60.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000001-0001-0000-0000-000000000001")
@@ -114,7 +107,6 @@
     (property "Value" "Soil Moisture Shallow (JST-PH)" (at 68.58 53.34 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; Filter cap for J8
   (symbol (lib_id "Device:C") (at 66.04 66.04 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000001-0002-0000-0000-000000000001")
@@ -122,7 +114,6 @@
     (property "Value" "100nF" (at 68.58 68.58 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; J9 — Soil Moisture Sensor (Deep)
   (symbol (lib_id "Connector:Conn_01x03") (at 50.8 86.36 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000002-0001-0000-0000-000000000001")
@@ -130,7 +121,6 @@
     (property "Value" "Soil Moisture Deep (JST-PH)" (at 68.58 78.74 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; Filter cap for J9
   (symbol (lib_id "Device:C") (at 66.04 91.44 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000002-0002-0000-0000-000000000001")
@@ -138,7 +128,6 @@
     (property "Value" "100nF" (at 68.58 93.98 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; J10 — Soil Temperature DS18B20
   (symbol (lib_id "Connector:Conn_01x03") (at 50.8 114.3 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000003-0001-0000-0000-000000000001")
@@ -146,7 +135,6 @@
     (property "Value" "Soil Temp DS18B20 (JST-PH)" (at 68.58 106.68 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; 4.7k 1-Wire pull-up for J10
   (symbol (lib_id "Device:R") (at 66.04 106.68 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000003-0002-0000-0000-000000000001")
@@ -154,7 +142,6 @@
     (property "Value" "4.7k" (at 68.58 109.22 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; 100nF decoupling for J10
   (symbol (lib_id "Device:C") (at 73.66 114.3 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000003-0003-0000-0000-000000000001")
@@ -162,7 +149,6 @@
     (property "Value" "100nF" (at 76.2 116.84 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; J11 — Leaf Wetness Sensor
   (symbol (lib_id "Connector:Conn_01x03") (at 50.8 142.24 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000004-0001-0000-0000-000000000001")
@@ -170,7 +156,6 @@
     (property "Value" "Leaf Wetness (JST-PH)" (at 68.58 134.62 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; 10k pull-down for leaf wetness
   (symbol (lib_id "Device:R") (at 66.04 147.32 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000004-0002-0000-0000-000000000001")
@@ -178,23 +163,16 @@
     (property "Value" "10k" (at 68.58 149.86 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; Filter cap for J11
   (symbol (lib_id "Device:C") (at 73.66 142.24 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000004-0003-0000-0000-000000000001")
     (property "Reference" "C17" (at 76.2 142.24 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 76.2 144.78 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
-
-  ;; =====================================================================
-  ;; SOLAR MODULE — Dashed box right half
-  ;; =====================================================================
-
   (text "╔══════════════════════════════════════════╗\n║         SOLAR MODULE (feature flag)           ║\n║       Cargo.toml: features = [\"solar\"]         ║\n╚══════════════════════════════════════════╝"
     (at 220.98 30.48 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
 
-  ;; J12 — Pyranometer ML8511 (4-pin: VCC, GND, OUT, EN)
   (symbol (lib_id "Connector:Conn_01x04") (at 218.44 60.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000005-0001-0000-0000-000000000001")
@@ -202,7 +180,6 @@
     (property "Value" "Pyranometer ML8511 (JST-PH)" (at 236.22 53.34 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; Decoupling + filter for J12
   (symbol (lib_id "Device:C") (at 233.68 66.04 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000005-0002-0000-0000-000000000001")
@@ -210,17 +187,12 @@
     (property "Value" "100nF" (at 236.22 68.58 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; J13 — Panel Temp Front DS18B20
   (symbol (lib_id "Connector:Conn_01x03") (at 218.44 93.98 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000006-0001-0000-0000-000000000001")
     (property "Reference" "J13" (at 218.44 86.36 0) (effects (font (size 1.27 1.27))))
     (property "Value" "Panel Temp Front DS18B20 (JST-PH)" (at 240.03 86.36 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
-
-  ;; Note: shares 1-Wire pull-up with J10 (soil temp) on GPIO16
-
-  ;; J14 — Panel Temp Back DS18B20
   (symbol (lib_id "Connector:Conn_01x03") (at 218.44 121.92 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000007-0001-0000-0000-000000000001")
@@ -228,7 +200,6 @@
     (property "Value" "Panel Temp Back DS18B20 (JST-PH)" (at 240.03 114.3 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; 4.7k 1-Wire pull-up for J14 (GPIO19)
   (symbol (lib_id "Device:R") (at 233.68 114.3 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000007-0002-0000-0000-000000000001")
@@ -236,7 +207,6 @@
     (property "Value" "4.7k" (at 236.22 116.84 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; J15 — Power Meter Pulse Input (2-pin)
   (symbol (lib_id "Connector:Conn_01x02") (at 218.44 149.86 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000008-0001-0000-0000-000000000001")
@@ -244,7 +214,6 @@
     (property "Value" "Power Meter S0 (JST-PH)" (at 236.22 144.78 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
 
-  ;; 10k pull-up for power pulse
   (symbol (lib_id "Device:R") (at 233.68 142.24 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000008-0002-0000-0000-000000000001")
@@ -252,18 +221,12 @@
     (property "Value" "10k" (at 236.22 144.78 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
 
-  ;; 100nF debounce for power pulse
   (symbol (lib_id "Device:C") (at 241.3 149.86 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid "40000008-0003-0000-0000-000000000001")
     (property "Reference" "C19" (at 243.84 149.86 0) (effects (font (size 1.27 1.27)) (justify left)))
     (property "Value" "100nF" (at 243.84 152.4 0) (effects (font (size 1.27 1.27)) (justify left)))
   )
-
-  ;; =====================================================================
-  ;; Hierarchical Labels
-  ;; =====================================================================
-
   (hierarchical_label "INDUSTRY_ADC" (shape input) (at 83.82 57.15 0) (effects (font (size 1.27 1.27)) (justify left))
     (uuid "40000009-0001-0000-0000-000000000001")
   )
@@ -288,11 +251,6 @@
   (hierarchical_label "GND" (shape input) (at 40.64 165.1 180) (effects (font (size 1.27 1.27)) (justify right))
     (uuid "40000009-0008-0000-0000-000000000001")
   )
-
-  ;; =====================================================================
-  ;; Important Annotations
-  ;; =====================================================================
-
   (text "WARNING: SHARED GPIO PINS\n\nGPIO7 is shared between:\n  - J8 (Soil Moisture Shallow) — Agriculture\n  - J12 (Pyranometer ML8511) — Solar\n\nGPIO16 (1-Wire Bus A) is shared between:\n  - J10 (Soil Temperature DS18B20) — Agriculture\n  - J13 (Panel Temp Front DS18B20) — Solar\n\nONLY enable one industry feature at compile time,\nor physically rewire to separate GPIOs.\n\nCargo.toml:\n  [features]\n  agriculture = []    # Uses GPIO 7, 16, 17, 18\n  solar = []          # Uses GPIO 7, 16, 19, 20\n  all-industries = [\"agriculture\", \"solar\"]  # CONFLICT!"
     (at 130.81 30.48 0) (effects (font (size 1.27 1.27) (bold yes) (color 255 0 0 1)) (justify left))
   )

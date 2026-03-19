@@ -534,12 +534,6 @@
       )
     )
   )
-
-  ;;; =======================================================================
-  ;;; HIERARCHICAL LABELS (interface to parent sheet)
-  ;;; =======================================================================
-
-  ;; SPI bus labels - left edge, LoRa section
   (hierarchical_label "SPI_MOSI"
     (shape input)
     (at 19.05 46.99 180)
@@ -577,7 +571,6 @@
     (uuid "hl-lora-dio0-0006")
   )
 
-  ;; UART labels - right side
   (hierarchical_label "UART_TX"
     (shape output)
     (at 167.64 46.99 0)
@@ -591,7 +584,6 @@
     (uuid "hl-uart-rx-0008")
   )
 
-  ;; USB labels - right side
   (hierarchical_label "USB_DN"
     (shape bidirectional)
     (at 167.64 113.03 0)
@@ -605,7 +597,6 @@
     (uuid "hl-usb-dp-0010")
   )
 
-  ;; Power labels
   (hierarchical_label "+3V3"
     (shape input)
     (at 19.05 30.48 180)
@@ -618,12 +609,6 @@
     (effects (font (size 1.27 1.27)) (justify right))
     (uuid "hl-gnd-0012")
   )
-
-  ;;; =======================================================================
-  ;;; SECTION 1: LoRa Module SX1276 (U8) — Left Half
-  ;;; =======================================================================
-
-  ;; --- U8: SX1276 LoRa Transceiver ---
   (symbol
     (lib_id "WeatherStation:SX1276")
     (at 63.5 55.88 0)
@@ -699,7 +684,6 @@
     )
   )
 
-  ;; --- +3V3 power symbol for U8 VCC ---
   (symbol
     (lib_id "power:+3V3")
     (at 68.58 35.56 0)
@@ -722,7 +706,6 @@
     )
   )
 
-  ;; --- GND power symbol for U8 GND ---
   (symbol
     (lib_id "power:GND")
     (at 68.58 76.2 0)
@@ -745,7 +728,6 @@
     )
   )
 
-  ;; --- GND power symbol for U8 GND_PAD (exposed pad) ---
   (symbol
     (lib_id "power:GND")
     (at 63.5 76.2 0)
@@ -768,7 +750,6 @@
     )
   )
 
-  ;; --- C10: 10uF decoupling capacitor for SX1276 ---
   (symbol
     (lib_id "Device:C_Polarized")
     (at 78.74 38.1 0)
@@ -798,7 +779,6 @@
     )
   )
 
-  ;; --- +3V3 for C10 ---
   (symbol
     (lib_id "power:+3V3")
     (at 78.74 31.75 0)
@@ -821,7 +801,6 @@
     )
   )
 
-  ;; --- GND for C10 ---
   (symbol
     (lib_id "power:GND")
     (at 78.74 44.45 0)
@@ -844,7 +823,6 @@
     )
   )
 
-  ;; --- C11: 100nF decoupling capacitor for SX1276 ---
   (symbol
     (lib_id "Device:C")
     (at 88.9 38.1 0)
@@ -874,7 +852,6 @@
     )
   )
 
-  ;; --- +3V3 for C11 ---
   (symbol
     (lib_id "power:+3V3")
     (at 88.9 31.75 0)
@@ -897,7 +874,6 @@
     )
   )
 
-  ;; --- GND for C11 ---
   (symbol
     (lib_id "power:GND")
     (at 88.9 44.45 0)
@@ -919,10 +895,6 @@
       (uuid "pwr-gnd-c11-pin1")
     )
   )
-
-  ;;; --- PI Matching Network (Series inductor L1 + Shunt caps C12, C13) ---
-
-  ;; L1: Series inductor for PI matching network (between SX1276 RFO_HF and antenna)
   (symbol
     (lib_id "Device:L")
     (at 88.9 68.58 90)
@@ -952,7 +924,6 @@
     )
   )
 
-  ;; C12: Shunt cap on SX1276 side of PI network
   (symbol
     (lib_id "Device:C")
     (at 82.55 76.2 0)
@@ -982,7 +953,6 @@
     )
   )
 
-  ;; GND for C12
   (symbol
     (lib_id "power:GND")
     (at 82.55 82.55 0)
@@ -1005,7 +975,6 @@
     )
   )
 
-  ;; C13: Shunt cap on antenna side of PI network
   (symbol
     (lib_id "Device:C")
     (at 95.25 76.2 0)
@@ -1035,7 +1004,6 @@
     )
   )
 
-  ;; GND for C13
   (symbol
     (lib_id "power:GND")
     (at 95.25 82.55 0)
@@ -1058,7 +1026,6 @@
     )
   )
 
-  ;;; --- J6: SMA Antenna Connector (Edge-Mount Female) ---
   (symbol
     (lib_id "WeatherStation:SMA_Edge_Mount")
     (at 113.03 68.58 0)
@@ -1088,7 +1055,6 @@
     )
   )
 
-  ;; GND for J6
   (symbol
     (lib_id "power:GND")
     (at 113.03 76.2 0)
@@ -1110,12 +1076,6 @@
       (uuid "pwr-gnd-j6-pin1")
     )
   )
-
-  ;;; =======================================================================
-  ;;; SECTION 2: UART Debug Header (J7) — Right Half, Upper
-  ;;; =======================================================================
-
-  ;; --- R7: 100R series resistor on TX line ---
   (symbol
     (lib_id "Device:R")
     (at 144.78 46.99 90)
@@ -1145,7 +1105,6 @@
     )
   )
 
-  ;; --- R8: 100R series resistor on RX line ---
   (symbol
     (lib_id "Device:R")
     (at 144.78 49.53 90)
@@ -1175,7 +1134,6 @@
     )
   )
 
-  ;; --- J7: 4-pin Debug UART Header ---
   (symbol
     (lib_id "WeatherStation:Conn_01x04_Pin")
     (at 160.02 52.07 0)
@@ -1211,7 +1169,6 @@
     )
   )
 
-  ;; --- +3V3 for J7 pin 3 ---
   (symbol
     (lib_id "power:+3V3")
     (at 152.4 48.26 0)
@@ -1234,7 +1191,6 @@
     )
   )
 
-  ;; --- GND for J7 pin 4 ---
   (symbol
     (lib_id "power:GND")
     (at 152.4 58.42 0)
@@ -1256,19 +1212,6 @@
       (uuid "pwr-gnd-j7-pin1")
     )
   )
-
-  ;;; =======================================================================
-  ;;; SECTION 3: USB-C Data Lines — Right Half, Lower
-  ;;; =======================================================================
-  ;; (USB-C data lines shared with power sheet; only hierarchical labels and notes here)
-
-  ;;; =======================================================================
-  ;;; WIRES
-  ;;; =======================================================================
-
-  ;; --- SPI Bus wires from hierarchical labels to U8 ---
-
-  ;; SPI_MOSI -> U8 MOSI (GPIO10)
   (wire
     (pts (xy 19.05 46.99) (xy 50.8 46.99))
     (stroke (width 0) (type default))
@@ -1280,7 +1223,6 @@
     (uuid "wire-spi-mosi-0302")
   )
 
-  ;; SPI_MISO -> U8 MISO (GPIO11)
   (wire
     (pts (xy 19.05 49.53) (xy 48.26 49.53))
     (stroke (width 0) (type default))
@@ -1297,7 +1239,6 @@
     (uuid "wire-spi-miso-0305")
   )
 
-  ;; SPI_SCK -> U8 SCK (GPIO12)
   (wire
     (pts (xy 19.05 52.07) (xy 45.72 52.07))
     (stroke (width 0) (type default))
@@ -1314,7 +1255,6 @@
     (uuid "wire-spi-sck-0308")
   )
 
-  ;; LORA_CS -> U8 NSS (GPIO13)
   (wire
     (pts (xy 19.05 54.61) (xy 43.18 54.61))
     (stroke (width 0) (type default))
@@ -1331,7 +1271,6 @@
     (uuid "wire-lora-cs-0311")
   )
 
-  ;; LORA_RST -> U8 NRESET (GPIO14)
   (wire
     (pts (xy 19.05 57.15) (xy 40.64 57.15))
     (stroke (width 0) (type default))
@@ -1348,7 +1287,6 @@
     (uuid "wire-lora-rst-0314")
   )
 
-  ;; LORA_DIO0 -> U8 DIO0 (GPIO15)
   (wire
     (pts (xy 19.05 59.69) (xy 38.1 59.69))
     (stroke (width 0) (type default))
@@ -1365,123 +1303,100 @@
     (uuid "wire-lora-dio0-0317")
   )
 
-  ;; U8 VCC to +3V3 power symbol
   (wire
     (pts (xy 68.58 38.1) (xy 68.58 35.56))
     (stroke (width 0) (type default))
     (uuid "wire-u8-vcc-0318")
   )
 
-  ;; U8 GND to GND power symbol
   (wire
     (pts (xy 68.58 73.66) (xy 68.58 76.2))
     (stroke (width 0) (type default))
     (uuid "wire-u8-gnd-0319")
   )
 
-  ;; U8 GND_PAD to GND power symbol
   (wire
     (pts (xy 63.5 73.66) (xy 63.5 76.2))
     (stroke (width 0) (type default))
     (uuid "wire-u8-gndpad-0320")
   )
 
-  ;; +3V3 to C10 top
   (wire
     (pts (xy 78.74 31.75) (xy 78.74 34.29))
     (stroke (width 0) (type default))
     (uuid "wire-c10-3v3-0321")
   )
 
-  ;; C10 bottom to GND
   (wire
     (pts (xy 78.74 41.91) (xy 78.74 44.45))
     (stroke (width 0) (type default))
     (uuid "wire-c10-gnd-0322")
   )
 
-  ;; +3V3 to C11 top
   (wire
     (pts (xy 88.9 31.75) (xy 88.9 34.29))
     (stroke (width 0) (type default))
     (uuid "wire-c11-3v3-0323")
   )
 
-  ;; C11 bottom to GND
   (wire
     (pts (xy 88.9 41.91) (xy 88.9 44.45))
     (stroke (width 0) (type default))
     (uuid "wire-c11-gnd-0324")
   )
-
-  ;; --- PI Matching Network Wires ---
-
-  ;; U8 RFO_HF output to C12 junction / L1 input
   (wire
     (pts (xy 76.2 68.58) (xy 82.55 68.58))
     (stroke (width 0) (type default))
     (uuid "wire-rfo-to-pi-0325")
   )
 
-  ;; C12 top to PI junction (RFO side)
   (wire
     (pts (xy 82.55 68.58) (xy 82.55 72.39))
     (stroke (width 0) (type default))
     (uuid "wire-c12-junction-0326")
   )
 
-  ;; L1 input from C12 junction
   (wire
     (pts (xy 82.55 68.58) (xy 85.09 68.58))
     (stroke (width 0) (type default))
     (uuid "wire-l1-input-0327")
   )
 
-  ;; C12 bottom to GND
   (wire
     (pts (xy 82.55 80.01) (xy 82.55 82.55))
     (stroke (width 0) (type default))
     (uuid "wire-c12-gnd-0328")
   )
 
-  ;; L1 output to C13 junction / antenna trace
   (wire
     (pts (xy 92.71 68.58) (xy 95.25 68.58))
     (stroke (width 0) (type default))
     (uuid "wire-l1-output-0329")
   )
 
-  ;; C13 top to PI junction (antenna side)
   (wire
     (pts (xy 95.25 68.58) (xy 95.25 72.39))
     (stroke (width 0) (type default))
     (uuid "wire-c13-junction-0330")
   )
 
-  ;; C13 bottom to GND
   (wire
     (pts (xy 95.25 80.01) (xy 95.25 82.55))
     (stroke (width 0) (type default))
     (uuid "wire-c13-gnd-0331")
   )
 
-  ;; PI network output to SMA connector J6 (50-ohm matched trace)
   (wire
     (pts (xy 95.25 68.58) (xy 107.95 68.58))
     (stroke (width 0) (type default))
     (uuid "wire-pi-to-sma-0332")
   )
 
-  ;; J6 GND
   (wire
     (pts (xy 113.03 73.66) (xy 113.03 76.2))
     (stroke (width 0) (type default))
     (uuid "wire-j6-gnd-0333")
   )
-
-  ;; --- UART Debug Header Wires ---
-
-  ;; Hierarchical UART_TX -> R7 -> J7 Pin 1 (TX)
   (wire
     (pts (xy 167.64 46.99) (xy 148.59 46.99))
     (stroke (width 0) (type default))
@@ -1492,7 +1407,6 @@
     (stroke (width 0) (type default))
     (uuid "wire-r7-to-label-0335")
   )
-  ;; R7 output to J7 pin 1
   (wire
     (pts (xy 148.59 46.99) (xy 148.59 48.26))
     (stroke (width 0) (type default))
@@ -1504,7 +1418,6 @@
     (uuid "wire-r7-out-to-j7-0337")
   )
 
-  ;; Hierarchical UART_RX -> R8 -> J7 Pin 2 (RX)
   (wire
     (pts (xy 167.64 49.53) (xy 148.59 49.53))
     (stroke (width 0) (type default))
@@ -1515,7 +1428,6 @@
     (stroke (width 0) (type default))
     (uuid "wire-r8-to-label-0339")
   )
-  ;; R8 output to J7 pin 2
   (wire
     (pts (xy 148.59 49.53) (xy 148.59 50.8))
     (stroke (width 0) (type default))
@@ -1527,7 +1439,6 @@
     (uuid "wire-r8-out-to-j7-0341")
   )
 
-  ;; J7 Pin 3 (3V3) to +3V3
   (wire
     (pts (xy 156.21 50.8) (xy 152.4 50.8))
     (stroke (width 0) (type default))
@@ -1539,7 +1450,6 @@
     (uuid "wire-j7-3v3-up-0343")
   )
 
-  ;; J7 Pin 4 (GND) to GND
   (wire
     (pts (xy 156.21 55.88) (xy 152.4 55.88))
     (stroke (width 0) (type default))
@@ -1550,14 +1460,6 @@
     (stroke (width 0) (type default))
     (uuid "wire-j7-gnd-down-0345")
   )
-
-  ;; --- USB-C Data Lines (notes only, shared with power sheet) ---
-  ;; USB_DN hierarchical label stands alone with notes
-  ;; USB_DP hierarchical label stands alone with notes
-
-  ;;; =======================================================================
-  ;;; NET LABELS (for GPIO assignments and signal names)
-  ;;; =======================================================================
 
   (net_label "GPIO10_SPI_MOSI"
     (at 27.94 46.99 0)
@@ -1617,127 +1519,101 @@
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-rxtx-0411")
   )
-
-  ;;; =======================================================================
-  ;;; TEXT NOTES & ANNOTATIONS
-  ;;; =======================================================================
-
-  ;; Section title: LoRa Module
   (text "LoRa SX1276 Transceiver Module"
     (at 50.8 24.13 0)
     (effects (font (size 2.54 2.54) bold) (justify left))
     (uuid "text-lora-title-0501")
   )
 
-  ;; Section title: UART Debug
   (text "UART Debug Header"
     (at 134.62 24.13 0)
     (effects (font (size 2.54 2.54) bold) (justify left))
     (uuid "text-uart-title-0502")
   )
 
-  ;; Section title: USB-C Data Lines
   (text "USB-C Data Lines"
     (at 134.62 100.33 0)
     (effects (font (size 2.54 2.54) bold) (justify left))
     (uuid "text-usb-title-0503")
   )
 
-  ;; Section title: WiFi/BLE Antenna
   (text "WiFi/BLE Antenna (ESP32-S3-WROOM-1)"
     (at 134.62 132.08 0)
     (effects (font (size 2.54 2.54) bold) (justify left))
     (uuid "text-wifi-title-0504")
   )
 
-  ;; SX1276 SPI interface note
   (text "SPI Interface:\nMOSI = GPIO10\nMISO = GPIO11\nSCK  = GPIO12\nNSS  = GPIO13 (Chip Select)\nReset = GPIO14\nDIO0 (IRQ) = GPIO15"
     (at 19.05 68.58 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-spi-pinout-0505")
   )
 
-  ;; Decoupling note
   (text "Decoupling: 10uF + 100nF\nPlace close to VCC pin"
     (at 78.74 26.67 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-decoupling-0506")
   )
 
-  ;; 50-ohm impedance matching note
   (text "50-ohm impedance matched trace\nPI matching network:\nL1 series + C12/C13 shunt\nTune for 868/915 MHz band"
     (at 82.55 88.9 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-impedance-0507")
   )
 
-  ;; SMA connector GND stitching note
   (text "NOTE: Place GND stitching vias\naround SMA connector footprint\nfor proper RF ground return path"
     (at 105.41 82.55 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-gnd-stitching-0508")
   )
 
-  ;; RXTX switch pin note
   (text "RXTX pin controls\nexternal RX/TX switch\n(active high during TX)"
     (at 78.74 58.42 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-rxtx-0509")
   )
 
-  ;; UART debug header note
   (text "DEBUG UART\n4-pin 2.54mm header\nPin 1: TX (GPIO43)\nPin 2: RX (GPIO44)\nPin 3: +3V3\nPin 4: GND\n\n100R series resistors on TX/RX\nfor ESD/short-circuit protection"
     (at 134.62 30.48 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-uart-debug-0510")
   )
 
-  ;; USB-C data lines note
   (text "USB D- = GPIO19\nUSB D+ = GPIO20\n\nDirectly routed to ESP32-S3\nUSB-OTG peripheral\n\n90-ohm differential impedance\npair routing required.\nKeep traces equal length.\nShared with power sub-sheet."
     (at 134.62 105.41 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-usb-notes-0511")
   )
 
-  ;; WiFi/BLE Antenna keep-out zone note
   (text "Using ESP32-S3-WROOM-1 onboard PCB antenna.\n\nANTENNA KEEP-OUT ZONE: 10mm x 10mm\nNo copper pour, traces, or components\nin antenna keep-out zone.\n\nKeep-out extends beyond module edge\non PCB. See module datasheet for\nexact dimensions and placement."
     (at 134.62 139.7 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid "text-wifi-keepout-0512")
   )
 
-  ;; Keep-out zone box (visual indicator using text box rectangle)
   (text "KEEP-OUT ZONE\n10mm x 10mm\nNo copper/components\nin antenna keep-out zone"
     (at 170.18 139.7 0)
     (effects (font (size 1.524 1.524) bold) (justify left))
     (uuid "text-keepout-box-0513")
   )
 
-  ;; RXTX wire stub from U8 pin 13
   (wire
     (pts (xy 76.2 60.96) (xy 82.55 60.96))
     (stroke (width 0) (type default))
     (uuid "wire-rxtx-stub-0350")
   )
 
-  ;; USB_DN wire from hierarchical label
   (wire
     (pts (xy 167.64 113.03) (xy 160.02 113.03))
     (stroke (width 0) (type default))
     (uuid "wire-usb-dn-0351")
   )
 
-  ;; USB_DP wire from hierarchical label
   (wire
     (pts (xy 167.64 115.57) (xy 160.02 115.57))
     (stroke (width 0) (type default))
     (uuid "wire-usb-dp-0352")
   )
-
-  ;;; =======================================================================
-  ;;; JUNCTIONS (where wires meet)
-  ;;; =======================================================================
-
   (junction
     (at 82.55 68.58)
     (diameter 0)
@@ -1762,11 +1638,6 @@
     (color 0 0 0 0)
     (uuid "junc-uart-rx-0604")
   )
-
-  ;;; =======================================================================
-  ;;; NO-CONNECT FLAGS (unused DIO pins)
-  ;;; =======================================================================
-
   (no_connect
     (at 50.8 58.42)
     (uuid "nc-dio1-0701")
@@ -1775,36 +1646,415 @@
     (at 50.8 60.96)
     (uuid "nc-dio2-0702")
   )
-
-  ;;; =======================================================================
-  ;;; GRAPHICAL ELEMENTS — Section Dividers
-  ;;; =======================================================================
-
-  ;; Vertical divider between left (LoRa) and right (UART/USB) sections
   (polyline
     (pts (xy 127 20.32) (xy 127 170.18))
     (stroke (width 0.254) (type dash))
     (uuid "divider-vert-0801")
   )
 
-  ;; Horizontal divider between UART and USB sections (right half)
   (polyline
     (pts (xy 127 96.52) (xy 200.66 96.52))
     (stroke (width 0.254) (type dash))
     (uuid "divider-horiz-uart-usb-0802")
   )
 
-  ;; Horizontal divider between USB and WiFi/BLE sections (right half)
   (polyline
     (pts (xy 127 128.27) (xy 200.66 128.27))
     (stroke (width 0.254) (type dash))
     (uuid "divider-horiz-usb-wifi-0803")
   )
 
-  ;; Keep-out zone dashed rectangle (visual)
   (polyline
     (pts (xy 167.64 137.16) (xy 193.04 137.16) (xy 193.04 162.56) (xy 167.64 162.56) (xy 167.64 137.16))
     (stroke (width 0.508) (type dash_dot))
     (uuid "keepout-rect-0804")
   )
+
+  (polyline
+    (pts (xy 19.05 170.18) (xy 127 170.18))
+    (stroke (width 0.254) (type dash))
+    (uuid "divider-horiz-sd-0805")
+  )
+
+  (text "SD CARD (SPI2 shared bus)\nMicro-SD holder (Molex 5031821852)\nCS=PD10, DET=PD11 (active low)\nShared with W5500 Ethernet (CS=PB12)"
+    (at 63.5 173.99 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "text-sd-info-0900")
+  )
+
+  (hierarchical_label "SPI2_SCK"
+    (shape input)
+    (at 19.05 180.34 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-sd-sck-0521")
+  )
+  (hierarchical_label "SPI2_MISO"
+    (shape output)
+    (at 19.05 182.88 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-sd-miso-0522")
+  )
+  (hierarchical_label "SPI2_MOSI"
+    (shape input)
+    (at 19.05 185.42 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-sd-mosi-0523")
+  )
+  (hierarchical_label "SD_CS"
+    (shape input)
+    (at 19.05 187.96 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-sd-cs-0524")
+  )
+  (hierarchical_label "SD_DET"
+    (shape output)
+    (at 19.05 190.5 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid "hl-sd-det-0525")
+  )
+
+  (symbol
+    (lib_id "WeatherStation:MicroSD_SPI")
+    (at 63.5 193.04 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "j22-sd-card-0501")
+    (property "Reference" "J22"
+      (at 63.5 177.8 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "MicroSD_SPI"
+      (at 63.5 206.0 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "Connector:MicroSD_Molex_5031821852"
+      (at 63.5 208.28 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "j22-pin1-cs")
+    )
+    (pin "2"
+      (uuid "j22-pin2-di")
+    )
+    (pin "3"
+      (uuid "j22-pin3-vss1")
+    )
+    (pin "4"
+      (uuid "j22-pin4-vcc")
+    )
+    (pin "5"
+      (uuid "j22-pin5-clk")
+    )
+    (pin "6"
+      (uuid "j22-pin6-vss2")
+    )
+    (pin "7"
+      (uuid "j22-pin7-do")
+    )
+    (pin "8"
+      (uuid "j22-pin8-cd")
+    )
+  )
+
+  (symbol
+    (lib_id "power:+3V3")
+    (at 44.45 191.77 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-j22-0508")
+    (property "Reference" "#PWR020"
+      (at 44.45 195.58 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 44.45 187.96 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-j22-pin1")
+    )
+  )
+
+  (symbol
+    (lib_id "power:GND")
+    (at 44.45 200.66 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-j22-0507")
+    (property "Reference" "#PWR021"
+      (at 44.45 207.01 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 44.45 204.47 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-j22-pin1")
+    )
+  )
+
+  (symbol
+    (lib_id "Device:C")
+    (at 88.9 185.42 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c38-sd-decoup-0502")
+    (property "Reference" "C38"
+      (at 91.44 184.15 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "100nF"
+      (at 91.44 186.69 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+      (at 89.8652 189.23 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "c38-pin1")
+    )
+    (pin "2"
+      (uuid "c38-pin2")
+    )
+  )
+
+  (symbol
+    (lib_id "power:+3V3")
+    (at 88.9 179.07 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-c38-0503")
+    (property "Reference" "#PWR022"
+      (at 88.9 182.88 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 88.9 175.26 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-c38-pin1")
+    )
+  )
+
+  (symbol
+    (lib_id "power:GND")
+    (at 88.9 191.77 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-gnd-c38-0504")
+    (property "Reference" "#PWR023"
+      (at 88.9 198.12 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND"
+      (at 88.9 195.58 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-gnd-c38-pin1")
+    )
+  )
+
+  (symbol
+    (lib_id "Device:R")
+    (at 88.9 201.93 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "r27-sd-pullup-0505")
+    (property "Reference" "R27"
+      (at 91.44 200.66 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "10k"
+      (at 91.44 203.2 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+      (at 88.9 203.7078 90)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1"
+      (uuid "r27-pin1")
+    )
+    (pin "2"
+      (uuid "r27-pin2")
+    )
+  )
+
+  (symbol
+    (lib_id "power:+3V3")
+    (at 88.9 196.85 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "pwr-3v3-r27-0506")
+    (property "Reference" "#PWR024"
+      (at 88.9 200.66 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+3V3"
+      (at 88.9 193.04 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1"
+      (uuid "pwr-3v3-r27-pin1")
+    )
+  )
+
+  (wire
+    (pts (xy 19.05 187.96) (xy 40.64 187.96))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-cs-0511")
+  )
+  (wire
+    (pts (xy 40.64 187.96) (xy 40.64 184.15))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-cs-0512")
+  )
+  (wire
+    (pts (xy 40.64 184.15) (xy 50.8 184.15))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-cs-0513")
+  )
+
+  (wire
+    (pts (xy 19.05 185.42) (xy 38.1 185.42))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-mosi-0514")
+  )
+  (wire
+    (pts (xy 38.1 185.42) (xy 38.1 186.69))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-mosi-0515")
+  )
+  (wire
+    (pts (xy 38.1 186.69) (xy 50.8 186.69))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-mosi-0516")
+  )
+
+  (wire
+    (pts (xy 19.05 182.88) (xy 35.56 182.88))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-miso-0517")
+  )
+  (wire
+    (pts (xy 35.56 182.88) (xy 35.56 199.39))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-miso-0518")
+  )
+  (wire
+    (pts (xy 35.56 199.39) (xy 50.8 199.39))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-miso-0519")
+  )
+
+  (wire
+    (pts (xy 19.05 180.34) (xy 33.02 180.34))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-sck-0520")
+  )
+  (wire
+    (pts (xy 33.02 180.34) (xy 33.02 194.31))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-sck-0521")
+  )
+  (wire
+    (pts (xy 33.02 194.31) (xy 50.8 194.31))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-sck-0522")
+  )
+
+  (wire
+    (pts (xy 44.45 191.77) (xy 50.8 191.77))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-vcc-0523")
+  )
+
+  (wire
+    (pts (xy 44.45 200.66) (xy 44.45 196.85))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-vss1-0525")
+  )
+  (wire
+    (pts (xy 44.45 196.85) (xy 50.8 196.85))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-vss1-0526")
+  )
+
+  (wire
+    (pts (xy 19.05 190.5) (xy 76.2 190.5))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-det-0527")
+  )
+  (wire
+    (pts (xy 76.2 190.5) (xy 76.2 184.15))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-det-0528")
+  )
+  (wire
+    (pts (xy 76.2 190.5) (xy 88.9 190.5))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-det-r27-0529")
+  )
+  (wire
+    (pts (xy 88.9 190.5) (xy 88.9 199.39))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-det-r27-0530")
+  )
+
+  (wire
+    (pts (xy 88.9 179.07) (xy 88.9 182.88))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-c38-3v3-0531")
+  )
+  (wire
+    (pts (xy 88.9 187.96) (xy 88.9 191.77))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-c38-gnd-0532")
+  )
+  (wire
+    (pts (xy 88.9 196.85) (xy 88.9 199.39))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-r27-3v3-0533")
+  )
+
+  (wire
+    (pts (xy 50.8 189.23) (xy 44.45 189.23))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-vss2-0537")
+  )
+  (wire
+    (pts (xy 44.45 189.23) (xy 44.45 196.85))
+    (stroke (width 0) (type default))
+    (uuid "wire-sd-vss2-0538")
+  )
+
 )
