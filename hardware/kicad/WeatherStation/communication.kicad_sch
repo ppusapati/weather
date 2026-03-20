@@ -2615,7 +2615,6 @@
     (uuid "wire-sd-vss2-0538")
   )
 
-  ;;; SECTION 5: ATWINC1500 WiFi Module (SPI3)
 
   (text "ATWINC1500 WiFi Module (SPI3)\nIEEE 802.11 b/g/n, QFN-28\nSPI3: PB3 SCK, PB4 MISO, PB5 MOSI\nCS=PE3, RST=PE4, IRQ=PE5, EN=PE6"
     (at 134.62 172.72 0)
@@ -2788,7 +2787,6 @@
     )
   )
 
-  ;; ATWINC1500 decoupling: C28 100nF + C29 10uF
   (symbol
     (lib_id "Device:C")
     (at 200.66 190.5 0)
@@ -2935,7 +2933,6 @@
     )
   )
 
-  ;; J18 WiFi SMA antenna connector
   (symbol
     (lib_id "WeatherStation:SMA_Edge_Mount")
     (at 203.2 213.36 0)
@@ -2987,7 +2984,6 @@
     )
   )
 
-  ;; ATWINC1500 wires: hierarchical labels to U12 pins
   (wire
     (pts (xy 134.62 180.34) (xy 165.1 180.34))
     (stroke (width 0) (type default))
@@ -3100,7 +3096,6 @@
     (uuid "wire-wifi-en-1221")
   )
 
-  ;; U12 VCC/GND wires
   (wire
     (pts (xy 182.88 182.88) (xy 182.88 180.34))
     (stroke (width 0) (type default))
@@ -3117,7 +3112,6 @@
     (uuid "wire-u12-gndpad-1224")
   )
 
-  ;; U12 ANT to J18
   (wire
     (pts (xy 190.5 187.96) (xy 195.58 187.96))
     (stroke (width 0) (type default))
@@ -3134,14 +3128,12 @@
     (uuid "wire-u12-ant-1227")
   )
 
-  ;; J18 GND wire
   (wire
     (pts (xy 203.2 218.44) (xy 203.2 220.98))
     (stroke (width 0) (type default))
     (uuid "wire-j18-gnd-1228")
   )
 
-  ;; Decoupling wires
   (wire
     (pts (xy 200.66 184.15) (xy 200.66 186.69))
     (stroke (width 0) (type default))
@@ -3163,7 +3155,6 @@
     (uuid "wire-c29-gnd-1232")
   )
 
-  ;;; SECTION 6: RN4870 BLE Module (USART3)
 
   (polyline
     (pts (xy 127 228.6) (xy 200.66 228.6))
@@ -3287,7 +3278,6 @@
     )
   )
 
-  ;; RN4870 decoupling: C30 100nF + C31 4.7uF
   (symbol
     (lib_id "Device:C")
     (at 200.66 248.92 0)
@@ -3434,7 +3424,6 @@
     )
   )
 
-  ;; RN4870 wires
   (wire
     (pts (xy 134.62 243.84) (xy 167.64 243.84))
     (stroke (width 0) (type default))
@@ -3486,7 +3475,6 @@
     (uuid "wire-ble-status-1510")
   )
 
-  ;; U13 VCC/GND wires
   (wire
     (pts (xy 177.8 238.76) (xy 177.8 236.22))
     (stroke (width 0) (type default))
@@ -3498,7 +3486,6 @@
     (uuid "wire-u13-gnd-1512")
   )
 
-  ;; Decoupling wires
   (wire
     (pts (xy 200.66 242.57) (xy 200.66 245.11))
     (stroke (width 0) (type default))
@@ -3520,7 +3507,6 @@
     (uuid "wire-c31-gnd-1516")
   )
 
-  ;;; SECTION 7: W5500 Ethernet Controller (SPI2 shared bus)
 
   (polyline
     (pts (xy 19.05 215.9) (xy 127 215.9))
@@ -3553,7 +3539,6 @@
     (uuid "hl-eth-int-1603")
   )
 
-  ;; U14 W5500
   (symbol
     (lib_id "WeatherStation:W5500")
     (at 63.5 254.0 0)
@@ -3669,7 +3654,6 @@
     )
   )
 
-  ;; Y2 25MHz crystal for W5500
   (symbol
     (lib_id "Device:Crystal")
     (at 88.9 259.08 0)
@@ -3699,7 +3683,6 @@
     )
   )
 
-  ;; C32, C33: 18pF load caps for Y2
   (symbol
     (lib_id "Device:C")
     (at 83.82 266.7 0)
@@ -3802,7 +3785,6 @@
     )
   )
 
-  ;; W5500 decoupling: C34-C37 100nF x4 + C26 10uF bulk
   (symbol
     (lib_id "Device:C")
     (at 38.1 238.76 0)
@@ -3949,7 +3931,6 @@
     )
   )
 
-  ;; J19 RJ45 Magjack
   (symbol
     (lib_id "WeatherStation:RJ45_Magjack")
     (at 107.95 254.0 0)
@@ -4016,7 +3997,6 @@
     )
   )
 
-  ;; W5500 wires: SPI2 labels reuse from SD card section (shared bus)
   (wire
     (pts (xy 19.05 233.68) (xy 48.26 233.68))
     (stroke (width 0) (type default))
@@ -4065,7 +4045,6 @@
     (uuid "wire-eth-int-1809")
   )
 
-  ;; U14 VCC/GND wires
   (wire
     (pts (xy 68.58 229.87) (xy 68.58 227.33))
     (stroke (width 0) (type default))
@@ -4077,7 +4056,6 @@
     (uuid "wire-u14-gnd-1811")
   )
 
-  ;; U14 TX+/TX- to J19
   (wire
     (pts (xy 78.74 273.05) (xy 88.9 273.05))
     (stroke (width 0) (type default))
@@ -4110,7 +4088,6 @@
     (uuid "wire-eth-txn-1817")
   )
 
-  ;; U14 RX+/RX- to J19
   (wire
     (pts (xy 78.74 267.97) (xy 93.98 267.97))
     (stroke (width 0) (type default))
@@ -4143,7 +4120,6 @@
     (uuid "wire-eth-rxn-1823")
   )
 
-  ;; U14 XTAL pins to Y2 crystal
   (wire
     (pts (xy 78.74 248.92) (xy 83.82 248.92))
     (stroke (width 0) (type default))
@@ -4176,7 +4152,6 @@
     (uuid "wire-eth-xtal2-1829")
   )
 
-  ;; Crystal load cap wires
   (wire
     (pts (xy 83.82 259.08) (xy 83.82 262.89))
     (stroke (width 0) (type default))
@@ -4198,14 +4173,12 @@
     (uuid "wire-c33-gnd-1833")
   )
 
-  ;; J19 shield GND wire
   (wire
     (pts (xy 107.95 269.24) (xy 107.95 271.78))
     (stroke (width 0) (type default))
     (uuid "wire-j19-gnd-1834")
   )
 
-  ;; Decoupling wires
   (wire
     (pts (xy 38.1 232.41) (xy 38.1 234.95))
     (stroke (width 0) (type default))
@@ -4227,7 +4200,6 @@
     (uuid "wire-c26-gnd-1838")
   )
 
-  ;; U14 LINKLED/ACTLED to J19 LEDs
   (wire
     (pts (xy 78.74 240.03) (xy 120.65 240.03))
     (stroke (width 0) (type default))
@@ -4273,7 +4245,6 @@
     (uuid "junc-xtal2-1902")
   )
 
-  ;;; SECTION 8: SIM7600E-H Cellular Module (UART4) + TPS7A2033 LDO
 
   (polyline
     (pts (xy 19.05 287.02) (xy 127 287.02))
@@ -4324,7 +4295,6 @@
     (uuid "hl-cell-ri-2006")
   )
 
-  ;; U16 TPS7A2033 3.8V LDO for SIM7600
   (symbol
     (lib_id "WeatherStation:TPS7A2033")
     (at 63.5 312.42 0)
@@ -4407,7 +4377,6 @@
     )
   )
 
-  ;; LDO input/output caps
   (symbol
     (lib_id "Device:C")
     (at 45.72 314.96 0)
@@ -4459,7 +4428,6 @@
     )
   )
 
-  ;; SIM7600 VBAT bulk caps: C36 100uF + C37 470uF
   (symbol
     (lib_id "Device:C_Polarized")
     (at 81.28 314.96 0)
@@ -4562,7 +4530,6 @@
     )
   )
 
-  ;; U15 SIM7600E-H
   (symbol
     (lib_id "WeatherStation:SIM7600EH")
     (at 63.5 347.98 0)
@@ -4647,7 +4614,6 @@
     )
   )
 
-  ;; J21 LTE SMA antenna connector
   (symbol
     (lib_id "WeatherStation:SMA_Edge_Mount")
     (at 88.9 360.68 0)
@@ -4699,7 +4665,6 @@
     )
   )
 
-  ;; J20 Nano SIM card holder
   (symbol
     (lib_id "WeatherStation:NanoSIM_Holder")
     (at 107.95 347.98 0)
@@ -4760,7 +4725,6 @@
     )
   )
 
-  ;; Wires: LDO IN from +3V3, EN tied to IN
   (wire
     (pts (xy 50.8 304.8) (xy 50.8 307.34))
     (stroke (width 0) (type default))
@@ -4782,7 +4746,6 @@
     (uuid "wire-ldo-en-2304")
   )
 
-  ;; LDO NR cap (noise reduction)
   (wire
     (pts (xy 53.34 317.34) (xy 45.72 317.34))
     (stroke (width 0) (type default))
@@ -4799,14 +4762,12 @@
     (uuid "wire-c35-gnd-2307")
   )
 
-  ;; U16 GND wire
   (wire
     (pts (xy 63.5 322.58) (xy 63.5 325.12))
     (stroke (width 0) (type default))
     (uuid "wire-u16-gnd-2308")
   )
 
-  ;; LDO output to VBAT line
   (wire
     (pts (xy 73.66 317.34) (xy 81.28 317.34))
     (stroke (width 0) (type default))
@@ -4838,7 +4799,6 @@
     (uuid "wire-c37-gnd-2314")
   )
 
-  ;; VBAT to U15
   (wire
     (pts (xy 91.44 317.34) (xy 91.44 330.2))
     (stroke (width 0) (type default))
@@ -4850,14 +4810,12 @@
     (uuid "wire-vbat-u15-2316")
   )
 
-  ;; U15 GND wire
   (wire
     (pts (xy 68.58 365.76) (xy 68.58 368.3))
     (stroke (width 0) (type default))
     (uuid "wire-u15-gnd-2317")
   )
 
-  ;; Hierarchical label wires to U15
   (wire
     (pts (xy 19.05 304.8) (xy 40.64 304.8))
     (stroke (width 0) (type default))
@@ -4954,7 +4912,6 @@
     (uuid "wire-cell-ri-2335")
   )
 
-  ;; U15 ANT_MAIN to J21 SMA
   (wire
     (pts (xy 76.2 335.28) (xy 80.01 335.28))
     (stroke (width 0) (type default))
@@ -4971,14 +4928,12 @@
     (uuid "wire-u15-ant-2338")
   )
 
-  ;; J21 GND wire
   (wire
     (pts (xy 88.9 365.76) (xy 88.9 368.3))
     (stroke (width 0) (type default))
     (uuid "wire-j21-gnd-2339")
   )
 
-  ;; U15 SIM pins to J20
   (wire
     (pts (xy 76.2 342.9) (xy 97.79 342.9))
     (stroke (width 0) (type default))
@@ -5038,7 +4993,6 @@
     (uuid "wire-sim-data-2350")
   )
 
-  ;; J20 GND wire
   (wire
     (pts (xy 107.95 359.41) (xy 107.95 361.95))
     (stroke (width 0) (type default))
