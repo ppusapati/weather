@@ -1825,15 +1825,18 @@
   ;; SILKSCREEN
   ;; =====================================================================
 
-  (gr_text "P9E" (at 50 36) (layer "F.SilkS")
-    (effects (font (size 2.5 2.5) (thickness 0.3) (bold yes)) (justify center))
+  ;; P9E 3-Line Label — Front silkscreen (centered on board)
+  (gr_text "P9E" (at 50 35) (layer "F.SilkS")
+    (effects (font (size 3.5 3.5) (thickness 0.4) (bold yes)) (justify center))
   )
-  (gr_text "P9E Microsystems Pvt Ltd" (at 50 39.5) (layer "F.SilkS")
+  (gr_text "P9E Microsystems Pvt Ltd" (at 50 39) (layer "F.SilkS")
+    (effects (font (size 1.2 1.2) (thickness 0.18) (bold yes)) (justify center))
+  )
+  (gr_text "www.p9e.in" (at 50 41.5) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)) (justify center))
   )
-  (gr_text "www.p9e.in" (at 50 42) (layer "F.SilkS")
-    (effects (font (size 0.8 0.8) (thickness 0.12)) (justify center))
-  )
+
+  ;; Product info (below P9E label)
   (gr_text "Weather Station v2.0" (at 50 45) (layer "F.SilkS")
     (effects (font (size 1.5 1.5) (thickness 0.2) (bold yes)) (justify center))
   )
@@ -1841,8 +1844,12 @@
     (effects (font (size 0.8 0.8) (thickness 0.12)) (justify center))
   )
 
-  ;; Back silkscreen
-  (gr_text "P9E Microsystems Pvt Ltd\nwww.p9e.in\nWeather Station PCB Rev 2.0\n4-Layer | FR4 Tg170 | ENIG\nRoHS Compliant | IPC Class 2\nConformal coat before deployment" (at 50 40) (layer "B.SilkS")
+  ;; P9E 3-Line Label — Back silkscreen
+  (gr_text "P9E\nP9E Microsystems Pvt Ltd\nwww.p9e.in" (at 50 35) (layer "B.SilkS")
+    (effects (font (size 1.5 1.5) (thickness 0.2) (bold yes)) (justify center mirror))
+  )
+  ;; Back silkscreen — regulatory/specs
+  (gr_text "Weather Station PCB Rev 2.0\n4-Layer | FR4 Tg170 | ENIG\nRoHS Compliant | IPC Class 2\nConformal coat before deployment" (at 50 44) (layer "B.SilkS")
     (effects (font (size 1 1) (thickness 0.15)) (justify center mirror))
   )
 
