@@ -2019,60 +2019,60 @@
     (uuid "wire-j7-gnd-down-0345")
   )
 
-  (net_label "GPIO10_SPI_MOSI"
+  (label "GPIO10_SPI_MOSI"
     (at 27.94 46.99 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio10-0401")
   )
-  (net_label "GPIO11_SPI_MISO"
+  (label "GPIO11_SPI_MISO"
     (at 27.94 49.53 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio11-0402")
   )
-  (net_label "GPIO12_SPI_SCK"
+  (label "GPIO12_SPI_SCK"
     (at 27.94 52.07 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio12-0403")
   )
-  (net_label "GPIO13_LORA_CS"
+  (label "GPIO13_LORA_CS"
     (at 27.94 54.61 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio13-0404")
   )
-  (net_label "GPIO14_LORA_RST"
+  (label "GPIO14_LORA_RST"
     (at 27.94 57.15 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio14-0405")
   )
-  (net_label "GPIO15_LORA_DIO0"
+  (label "GPIO15_LORA_DIO0"
     (at 27.94 59.69 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio15-0406")
   )
 
-  (net_label "GPIO43_UART_TX"
+  (label "GPIO43_UART_TX"
     (at 135.89 46.99 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio43-0407")
   )
-  (net_label "GPIO44_UART_RX"
+  (label "GPIO44_UART_RX"
     (at 135.89 49.53 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-gpio44-0408")
   )
 
-  (net_label "GPIO19_USB_DN"
+  (label "GPIO19_USB_DN"
     (at 160.02 113.03 180)
     (effects (font (size 1.016 1.016)) (justify right))
     (uuid "netlabel-gpio19-0409")
   )
-  (net_label "GPIO20_USB_DP"
+  (label "GPIO20_USB_DP"
     (at 160.02 115.57 180)
     (effects (font (size 1.016 1.016)) (justify right))
     (uuid "netlabel-gpio20-0410")
   )
 
-  (net_label "RXTX_SW"
+  (label "RXTX_SW"
     (at 76.2 60.96 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-rxtx-0411")
@@ -4999,7 +4999,7 @@
     (uuid "wire-j20-gnd-2351")
   )
 
-  (net_label "VBAT_SIM"
+  (label "VBAT_SIM"
     (at 81.28 317.34 0)
     (effects (font (size 1.016 1.016)) (justify left))
     (uuid "netlabel-vbat-sim-2401")
