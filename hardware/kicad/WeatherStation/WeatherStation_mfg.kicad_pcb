@@ -98,11 +98,6 @@
       (outputdirectory "gerbers/")
     )
   )
-
-  ;; =====================================================================
-  ;; NET DEFINITIONS
-  ;; =====================================================================
-
   (net 0 "")
   (net 1 "GND")
   (net 2 "+3V3")
@@ -111,7 +106,6 @@
   (net 5 "VSOLAR")
   (net 6 "VBAT_SIM")
 
-  ;; SPI1 - LoRa (SX1276)
   (net 10 "SPI1_MOSI")
   (net 11 "SPI1_MISO")
   (net 12 "SPI1_SCK")
@@ -121,7 +115,6 @@
   (net 16 "LORA_DIO1")
   (net 17 "LORA_ANT")
 
-  ;; SPI2 - W5500 Ethernet + SD Card (shared bus)
   (net 20 "SPI2_MOSI")
   (net 21 "SPI2_MISO")
   (net 22 "SPI2_SCK")
@@ -131,7 +124,6 @@
   (net 26 "SD_CS")
   (net 27 "SD_DET")
 
-  ;; SPI3 - ATWINC1500 WiFi
   (net 30 "SPI3_MOSI")
   (net 31 "SPI3_MISO")
   (net 32 "SPI3_SCK")
@@ -141,28 +133,23 @@
   (net 36 "WIFI_EN")
   (net 37 "WIFI_ANT")
 
-  ;; I2C1 - Sensors
   (net 40 "I2C1_SDA")
   (net 41 "I2C1_SCL")
 
-  ;; USART1 - Debug UART
   (net 42 "UART1_TX")
   (net 43 "UART1_RX")
 
-  ;; USART2 - RS485 (MAX3485)
   (net 44 "UART2_TX")
   (net 45 "UART2_RX")
   (net 46 "RS485_A")
   (net 47 "RS485_B")
   (net 48 "RS485_DE")
 
-  ;; USART3 - RN4870 BLE
   (net 50 "BLE_TX")
   (net 51 "BLE_RX")
   (net 52 "BLE_RST")
   (net 53 "BLE_STATUS")
 
-  ;; UART4 - SIM7600 Cellular
   (net 54 "CELL_TX")
   (net 55 "CELL_RX")
   (net 56 "CELL_PWRKEY")
@@ -170,7 +157,6 @@
   (net 58 "CELL_DTR")
   (net 59 "CELL_RI")
 
-  ;; W5500 Ethernet PHY
   (net 60 "ETH_TXP")
   (net 61 "ETH_TXN")
   (net 62 "ETH_RXP")
@@ -180,20 +166,17 @@
   (net 66 "ETH_LINKLED")
   (net 67 "ETH_ACTLED")
 
-  ;; SIM7600 SIM card
   (net 70 "SIM_VCC")
   (net 71 "SIM_RST")
   (net 72 "SIM_CLK")
   (net 73 "SIM_DATA")
   (net 74 "LTE_ANT")
 
-  ;; STM32 crystal
   (net 75 "HSE_IN")
   (net 76 "HSE_OUT")
   (net 77 "NRST")
   (net 78 "BOOT0")
 
-  ;; GPIO / misc
   (net 80 "USB_DP")
   (net 81 "USB_DM")
   (net 82 "CHRG_STAT")
@@ -211,11 +194,6 @@
   (net 94 "MODE_SW1")
   (net 95 "MODE_SW2")
   (net 96 "STATUS_LED")
-
-  ;; =====================================================================
-  ;; U10: STM32F407VGT6 — LQFP-100, center of board
-  ;; =====================================================================
-
   (footprint "Package_QFP:LQFP-100_14x14mm_P0.5mm" (layer "F.Cu")
     (tstamp "fp-u10-0001")
     (at 50 22)
@@ -504,11 +482,6 @@
     (pad "1" smd rect (at -2.1 0) (size 2.0 2.3) (layers "F.Cu" "F.Paste" "F.Mask") (net 46 "RS485_A"))
     (pad "2" smd rect (at 2.1 0) (size 2.0 2.3) (layers "F.Cu" "F.Paste" "F.Mask") (net 47 "RS485_B"))
   )
-
-  ;; =====================================================================
-  ;; POWER SUPPLY: TP4056, DW01A, FS8205A, AMS1117
-  ;; =====================================================================
-
   (footprint "Connector_USB:USB_C_Receptacle_GCT_USB4105" (layer "F.Cu")
     (tstamp "fp-j1-0001")
     (at 36 78 180)
@@ -590,7 +563,6 @@
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
 
-  ;; U2A: DW01A Battery Protection IC (SOT-23-6) — paired with Q1
   (footprint "Package_SO:SOT-23-6" (layer "F.Cu")
     (tstamp "fp-u2a-0001")
     (at 18 58)
@@ -604,7 +576,6 @@
     (pad "6" smd rect (at 1.1 -0.95) (size 0.6 0.7) (layers "F.Cu" "F.Paste" "F.Mask") (net 4 "VBAT"))
   )
 
-  ;; Q1: FS8205A Dual N-MOSFET for battery protection (SOT-23-6)
   (footprint "Package_SO:SOT-23-6" (layer "F.Cu")
     (tstamp "fp-q1-0001")
     (at 22, 58)
@@ -736,7 +707,6 @@
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 0 ""))
   )
 
-  ;; R6d: 4th LED series resistor (spare, per BOM Qty=4)
   (footprint "Resistor_SMD:R_0402_1005Metric" (layer "F.Cu")
     (tstamp "fp-r6d-0001")
     (at 29 52 90)
@@ -781,11 +751,6 @@
     (pad "1" smd rect (at -3.25 0) (size 1.5 1.0) (layers "F.Cu" "F.Paste" "F.Mask") (net 77 "NRST"))
     (pad "2" smd rect (at 3.25 0) (size 1.5 1.0) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; I2C SENSORS: BME280, AS5600, SI1145, BH1750
-  ;; =====================================================================
-
   (footprint "Package_LGA:Bosch_BME280_LGA-8_2.5x2.5mm" (layer "F.Cu")
     (tstamp "fp-u4-0001")
     (at 84 16)
@@ -881,7 +846,6 @@
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
 
-  ;; C4: 1uF AS5600 decoupling capacitor
   (footprint "Capacitor_SMD:C_0402_1005Metric" (layer "F.Cu")
     (tstamp "fp-c4-0001")
     (at 94 18)
@@ -908,11 +872,6 @@
     (pad "1" smd rect (at -0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 2 "+3V3"))
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; U8: SX1276 LoRa + impedance matching + SMA
-  ;; =====================================================================
-
   (footprint "Module:RFM95W" (layer "F.Cu")
     (tstamp "fp-u8-0001")
     (at 12 30)
@@ -989,11 +948,6 @@
     (pad "1" smd rect (at -0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 2 "+3V3"))
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; U12: ATWINC1500 WiFi + SMA + decoupling
-  ;; =====================================================================
-
   (footprint "Package_DFN_QFN:QFN-28-1EP_5x5mm_P0.5mm_EP3.1x3.1mm" (layer "F.Cu")
     (tstamp "fp-u12-0001")
     (at 35 38)
@@ -1066,11 +1020,6 @@
     (pad "2" smd rect (at -2.5 0) (size 1.5 1.5) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
     (pad "3" smd rect (at 2.5 0) (size 1.5 1.5) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; U13: RN4870 BLE Module + decoupling
-  ;; =====================================================================
-
   (footprint "WeatherStation:RN4870_11.5x8mm" (layer "F.Cu")
     (tstamp "fp-u13-0001")
     (at 50 40)
@@ -1129,11 +1078,6 @@
     (pad "1" smd rect (at -0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 51 "BLE_RX"))
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 0 ""))
   )
-
-  ;; =====================================================================
-  ;; U14: W5500 Ethernet + 25MHz crystal + RJ45
-  ;; =====================================================================
-
   (footprint "Package_QFP:LQFP-48_7x7mm_P0.5mm" (layer "F.Cu")
     (tstamp "fp-u14-0001")
     (at 60 55)
@@ -1278,11 +1222,6 @@
     (pad "S1" thru_hole circle (at -5.5 0) (size 2.4 2.4) (drill 1.6) (layers "*.Cu" "*.Mask") (net 1 "GND"))
     (pad "S2" thru_hole circle (at 5.5 0) (size 2.4 2.4) (drill 1.6) (layers "*.Cu" "*.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; U15: SIM7600E-H Cellular + U16: TPS7A2033 LDO
-  ;; =====================================================================
-
   (footprint "Package_TO_SOT_SMD:SOT-23-5" (layer "F.Cu")
     (tstamp "fp-u16-0001")
     (at 42 62)
@@ -1364,11 +1303,6 @@
     (pad "2" smd rect (at -2.5 0) (size 1.5 1.5) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
     (pad "3" smd rect (at 2.5 0) (size 1.5 1.5) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; SENSOR & INDUSTRY CONNECTORS
-  ;; =====================================================================
-
   (footprint "Connector_RJ:RJ11_Amphenol_54601" (layer "F.Cu")
     (tstamp "fp-j4-0001")
     (at 96 32 90)
@@ -1606,11 +1540,6 @@
     (pad "1" smd rect (at -0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 96 "STATUS_LED"))
     (pad "2" smd rect (at 0.48 0) (size 0.56 0.62) (layers "F.Cu" "F.Paste" "F.Mask") (net 0 ""))
   )
-
-  ;; =====================================================================
-  ;; BOARD OUTLINE — 100mm x 80mm rounded rectangle (5mm corner radius)
-  ;; =====================================================================
-
   (gr_line (start 5 0) (end 95 0) (layer "Edge.Cuts") (width 0.1) (tstamp "e0000001-0000-0000-0000-000000000001"))
   (gr_arc (start 95 0) (mid 98.536 1.464) (end 100 5) (layer "Edge.Cuts") (width 0.1) (tstamp "e0000001-0000-0000-0000-000000000002"))
   (gr_line (start 100 5) (end 100 75) (layer "Edge.Cuts") (width 0.1) (tstamp "e0000001-0000-0000-0000-000000000003"))
@@ -1619,11 +1548,6 @@
   (gr_arc (start 5 80) (mid 1.464 78.536) (end 0 75) (layer "Edge.Cuts") (width 0.1) (tstamp "e0000001-0000-0000-0000-000000000006"))
   (gr_line (start 0 75) (end 0 5) (layer "Edge.Cuts") (width 0.1) (tstamp "e0000001-0000-0000-0000-000000000007"))
   (gr_arc (start 0 5) (mid 1.464 1.464) (end 5 0) (layer "Edge.Cuts") (width 0.1) (tstamp "e0000001-0000-0000-0000-000000000008"))
-
-  ;; =====================================================================
-  ;; MOUNTING HOLES (M3) — 4 corners
-  ;; =====================================================================
-
   (footprint "MountingHole:MountingHole_3.2mm_M3_Pad_Via" (layer "F.Cu")
     (tstamp "f0000001-0000-0000-0000-000000000001")
     (at 5 5)
@@ -1652,11 +1576,6 @@
     (property "Value" "MountingHole_M3" (at 0 3) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))
     (pad "1" thru_hole circle (at 0 0) (size 6.0 6.0) (drill 3.2) (layers "*.Cu" "*.Mask") (net 1 "GND"))
   )
-
-  ;; =====================================================================
-  ;; FIDUCIALS (3 points for pick-and-place alignment)
-  ;; =====================================================================
-
   (footprint "Fiducial:Fiducial_1mm_Mask2mm" (layer "F.Cu")
     (tstamp "f0000002-0000-0000-0000-000000000001")
     (at 8 8)
@@ -1679,9 +1598,6 @@
     (pad "1" smd circle (at 0 0) (size 1 1) (layers "F.Cu" "F.Mask"))
   )
 
-  ;; =====================================================================
-  ;; GROUND STITCHING VIAS (perimeter + near RF sections)
-  ;; =====================================================================
   (via (at 10 3) (size 0.6) (drill 0.3) (layers "F.Cu" "B.Cu") (net 1) (tstamp "gstitch-0001"))
   (via (at 10 77) (size 0.6) (drill 0.3) (layers "F.Cu" "B.Cu") (net 1) (tstamp "gstitch-0002"))
   (via (at 15 3) (size 0.6) (drill 0.3) (layers "F.Cu" "B.Cu") (net 1) (tstamp "gstitch-0003"))
@@ -1752,12 +1668,6 @@
   (via (at 5 50) (size 0.6) (drill 0.3) (layers "F.Cu" "B.Cu") (net 1) (tstamp "gstitch-0068"))
   (via (at 15 42) (size 0.6) (drill 0.3) (layers "F.Cu" "B.Cu") (net 1) (tstamp "gstitch-0069"))
   (via (at 18 42) (size 0.6) (drill 0.3) (layers "F.Cu" "B.Cu") (net 1) (tstamp "gstitch-0070"))
-
-  ;; =====================================================================
-  ;; COPPER ZONES
-  ;; =====================================================================
-
-  ;; In1.Cu: Solid GND plane (no splits)
   (zone (net 1) (net_name "GND") (layer "In1.Cu") (tstamp "zone-gnd-in1")
     (hatch edge 0.508)
     (connect_pads (clearance 0.2))
@@ -1773,7 +1683,6 @@
     )
   )
 
-  ;; In2.Cu: 3V3 power plane
   (zone (net 2) (net_name "+3V3") (layer "In2.Cu") (tstamp "zone-3v3-in2")
     (hatch edge 0.508)
     (connect_pads (clearance 0.2))
@@ -1789,7 +1698,6 @@
     )
   )
 
-  ;; F.Cu: GND pour (fills remaining area)
   (zone (net 1) (net_name "GND") (layer "F.Cu") (tstamp "zone-gnd-fcu") (priority 0)
     (hatch edge 0.508)
     (connect_pads (clearance 0.3))
@@ -1805,7 +1713,6 @@
     )
   )
 
-  ;; B.Cu: GND pour (fills remaining area)
   (zone (net 1) (net_name "GND") (layer "B.Cu") (tstamp "zone-gnd-bcu") (priority 0)
     (hatch edge 0.508)
     (connect_pads (clearance 0.3))
@@ -1820,12 +1727,6 @@
       )
     )
   )
-
-  ;; =====================================================================
-  ;; SILKSCREEN
-  ;; =====================================================================
-
-  ;; P9E 3-Line Label — Front silkscreen (centered on board)
   (gr_text "P9E" (at 50 35) (layer "F.SilkS")
     (effects (font (size 3.5 3.5) (thickness 0.4) (bold yes)) (justify center))
   )
@@ -1836,7 +1737,6 @@
     (effects (font (size 1 1) (thickness 0.15)) (justify center))
   )
 
-  ;; Product info (below P9E label)
   (gr_text "Weather Station v2.0" (at 50 45) (layer "F.SilkS")
     (effects (font (size 1.5 1.5) (thickness 0.2) (bold yes)) (justify center))
   )
@@ -1844,19 +1744,12 @@
     (effects (font (size 0.8 0.8) (thickness 0.12)) (justify center))
   )
 
-  ;; P9E 3-Line Label — Back silkscreen
   (gr_text "P9E\nP9E Microsystems Pvt Ltd\nwww.p9e.in" (at 50 35) (layer "B.SilkS")
     (effects (font (size 1.5 1.5) (thickness 0.2) (bold yes)) (justify center mirror))
   )
-  ;; Back silkscreen — regulatory/specs
   (gr_text "Weather Station PCB Rev 2.0\n4-Layer | FR4 Tg170 | ENIG\nRoHS Compliant | IPC Class 2\nConformal coat before deployment" (at 50 44) (layer "B.SilkS")
     (effects (font (size 1 1) (thickness 0.15)) (justify center mirror))
   )
-
-  ;; =====================================================================
-  ;; DESIGN NOTES (User.Comments layer)
-  ;; =====================================================================
-
   (gr_text "DESIGN NOTES:\n1. 4-layer stackup: Signal/GND/Power/Signal\n2. In1.Cu = solid GND plane\n3. In2.Cu = 3V3 pour + VBAT_SIM island\n4. Controlled impedance: 50ohm (LoRa, WiFi, LTE), 90ohm diff (USB, Ethernet)\n5. All decoupling caps within 3mm of IC power pins\n6. Board finish: ENIG\n7. Min trace/space: 0.15mm/0.15mm\n8. Min drill: 0.3mm (laser), 0.4mm (mechanical)\n9. Solder mask: green, both sides\n10. Apply conformal coating for outdoor deployment"
     (at 110 20) (layer "Cmts.User")
     (effects (font (size 1.2 1.2) (thickness 0.15)) (justify left))
