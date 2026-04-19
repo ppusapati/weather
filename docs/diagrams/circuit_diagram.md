@@ -64,6 +64,17 @@
               GND            GND
 ```
 
+**I2C sensor pin notes (must be wired):**
+
+| Sensor | Pin | Connect to | Purpose |
+|--------|-----|------------|---------|
+| BME280 | CSB (pin 5) | VCC (3.3V) | Selects I2C mode (not SPI) |
+| BME280 | SDO (pin 6) | GND | Sets I2C address 0x76 |
+| AS5600 | DIR (pin 5) | GND | Clockwise direction counting |
+| AS5600 | OUT (pin 6) | NC | Unused in I2C mode |
+| AS5600 | PGO (pin 7) | NC | Programming input, leave open |
+| BH1750 | ADDR (pin 3) | GND | Sets I2C address 0x23 |
+
 ## 3. SPI Bus — LoRa SX1276 (RFM95W)
 
 ```
@@ -200,8 +211,10 @@
                   GND
 
     Decoupling:
-    - 10µF tantalum on AMS1117 input and output
-    - 100nF ceramic on 3.3V rail near STM32
+    - 10µF tantalum or electrolytic on AMS1117 input (C5) — low-ESR required (0.1–0.5Ω)
+    - 22µF tantalum or electrolytic on AMS1117 output (C3) — low-ESR required (0.1–0.5Ω)
+    - 100nF ceramic bypass (C6) on 3.3V rail near AMS1117
+    - 1µF ceramic cap on STM32F407 VBAT pin to GND (C100) — required for RTC stability
 ```
 
 ## 7. Status LED
