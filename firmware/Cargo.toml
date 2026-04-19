@@ -1,0 +1,69 @@
+[package]
+name = "weather-station"
+version = "2.0.0"
+edition = "2021"
+authors = ["Weather Station Team"]
+description = "STM32F407 Weather Station Firmware — Single-MCU Industrial Architecture"
+
+[dependencies]
+# STM32F4 HAL
+stm32f4xx-hal = { version = "0.21", features = ["stm32f407"] }
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7"
+panic-halt = "1.0"
+
+# Embedded ecosystem
+embedded-hal = "1.0"
+embedded-io = "0.6"
+fugit = "0.3"
+critical-section = "1.2"
+
+# Async runtime
+embassy-executor = { version = "0.6", features = ["task-arena-size-65536"] }
+embassy-time = "0.4"
+embassy-sync = "0.6"
+
+# Data serialization
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+# Logging
+log = "0.4"
+defmt = "0.3"
+defmt-rtt = "0.4"
+
+# No-std compatible utilities
+heapless = "0.8"
+
+# SD card (FAT32 via SPI)
+embedded-sdmmc = { version = "0.8", optional = true }
+embedded-hal-bus = { version = "0.2", optional = true }
+
+# Math (for libm functions in no_std)
+libm = "0.2"
+
+# Allocator for no_std
+embedded-alloc = "0.6"
+
+[features]
+default = []
+agriculture = []
+solar = []
+india = []
+cellular = []
+ethernet = []
+sdcard = ["embedded-sdmmc", "embedded-hal-bus"]
+all-industries = ["agriculture", "solar", "india"]
+all-comms = ["cellular", "ethernet", "sdcard"]
+full-system = ["agriculture", "solar", "india", "cellular", "ethernet", "sdcard"]
+
+[profile.dev]
+opt-level = "s"
+debug = true
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+debug = false
+strip = "symbols"
