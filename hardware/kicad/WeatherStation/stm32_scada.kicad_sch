@@ -286,29 +286,6 @@
     (property "Reference" "J16" (at 299.72 60.96 0) (effects (font (size 1.27 1.27))))
     (property "Value" "RS485 Bus (Phoenix MC)" (at 314.96 60.96 0) (effects (font (size 1.0 1.0)) (justify left)))
   )
-  (text "╔══════════════════════════════════════════╗\n║   ESP32-S3 Bridge (Cloud Connectivity)   ║\n║   USART3 @ 921600 baud, 3.3V levels     ║\n║   Framed protocol with CRC16            ║\n╚══════════════════════════════════════════╝"
-    (at 220 115 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
-  )
-
-  (symbol (lib_id "Connector:Conn_01x04") (at 269.24 139.7 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid "50000003-0001-0000-0000-000000000001")
-    (property "Reference" "J17" (at 269.24 129.54 0) (effects (font (size 1.27 1.27))))
-    (property "Value" "ESP32-S3 Bridge (Header)" (at 289.56 129.54 0) (effects (font (size 1.0 1.0)) (justify left)))
-  )
-
-  (symbol (lib_id "Device:R") (at 243.84 134.62 90) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid "50000003-0002-0000-0000-000000000001")
-    (property "Reference" "R23" (at 243.84 129.54 0) (effects (font (size 1.0 1.0))))
-    (property "Value" "100Ω" (at 243.84 139.7 0) (effects (font (size 1.0 1.0))))
-  )
-  (symbol (lib_id "Device:R") (at 243.84 142.24 90) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid "50000003-0003-0000-0000-000000000001")
-    (property "Reference" "R24" (at 243.84 147.32 0) (effects (font (size 1.0 1.0))))
-    (property "Value" "100Ω" (at 243.84 152.4 0) (effects (font (size 1.0 1.0))))
-  )
   (text "╔════════════════════════════════════╗\n║   Mode Select DIP Switch           ║\n║   SW1=0,SW2=0: Cloud               ║\n║   SW1=1,SW2=0: SCADA               ║\n║   SW1=0,SW2=1: Hybrid              ║\n║   SW1=1,SW2=1: Hybrid (reserved)   ║\n╚════════════════════════════════════╝"
     (at 55.88 165.1 0) (effects (font (size 1.27 1.27) (bold yes)) (justify left))
   )
@@ -335,7 +312,7 @@
   (text "LEDs:\n  PD0 = Green (Status/Heartbeat)\n  PD1 = Red (Error/Fault)\n  PD2 = Amber (SCADA Active)"
     (at 55.88 215 0) (effects (font (size 1.0 1.0)) (justify left))
   )
-  (text "DESIGN NOTES:\n\n1. STM32F407VGT6 handles ALL sensor acquisition and local processing\n2. ESP32-S3 handles cloud connectivity ONLY (WiFi, BLE, MQTT, HTTP)\n3. STM32 sends processed readings to ESP32 via USART3 bridge\n4. RS485 Modbus runs on STM32 USART2 via MAX3485 transceiver\n5. Both MCUs share 3.3V power rail from TPS63020\n6. IWDG on STM32 provides 4-second watchdog protection\n7. DIP switch on PE0/PE1 selects operating mode at boot\n8. All external I/O protected with TVS diodes\n\nRS485 BUS WIRING:\n  - Use twisted pair cable (Cat5e or dedicated RS485 cable)\n  - 120Ω termination at each end of bus\n  - Maximum bus length: 1200m at 9600 baud\n  - Maximum 32 devices on bus\n  - Shield connected to GND at one end only\n\nJ16 PINOUT (Phoenix Contact MC series):\n  Pin 1 = A (non-inverting, D+)\n  Pin 2 = B (inverting, D-)\n  Pin 3 = GND (signal ground)\n  Pin 4 = Shield (chassis ground)"
+  (text "DESIGN NOTES:\n\n1. STM32F407VGT6 is the SOLE MCU — handles all sensor acquisition,\n   local processing, cloud/SCADA connectivity, and data logging\n2. ATWINC1500 WiFi module on SPI1 handles cloud (MQTT/HTTP)\n3. RN4870 BLE on USART3 handles Bluetooth LE sensor broadcast\n4. RS485 Modbus on USART2 via MAX3485 transceiver\n5. W5500 Ethernet on SPI2 for wired LAN connectivity\n6. IWDG provides 4-second hardware watchdog protection\n7. DIP switch on PE0/PE1 selects operating mode at boot\n8. All external I/O protected with TVS diodes\n\nRS485 BUS WIRING:\n  - Use twisted pair cable (Cat5e or dedicated RS485 cable)\n  - 120Ω termination at each end of bus\n  - Maximum bus length: 1200m at 9600 baud\n  - Maximum 32 devices on bus\n  - Shield connected to GND at one end only\n\nJ16 PINOUT (Phoenix Contact MC series):\n  Pin 1 = A (non-inverting, D+)\n  Pin 2 = B (inverting, D-)\n  Pin 3 = GND (signal ground)\n  Pin 4 = Shield (chassis ground)"
     (at 55.88 240 0) (effects (font (size 1.0 1.0)) (justify left))
   )
   (hierarchical_label "I2C1_SCL" (shape bidirectional) (at 167.64 45.72 0) (effects (font (size 1.27 1.27)) (justify left))
@@ -383,12 +360,6 @@
   )
   (hierarchical_label "GND" (shape input) (at 88.9 152.4 180) (effects (font (size 1.27 1.27)) (justify right))
     (uuid "50000005-0009-0000-0000-000000000001")
-  )
-  (hierarchical_label "ESP32_BRIDGE_TX" (shape output) (at 167.64 0 0) (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "50000005-0010-0000-0000-000000000001")
-  )
-  (hierarchical_label "ESP32_BRIDGE_RX" (shape input) (at 167.64 -2.54 0) (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "50000005-0011-0000-0000-000000000001")
   )
 
 )
